@@ -1,0 +1,6 @@
+"GarioParty13"
+{
+	"base"			"base"
+	"title"			"Gario Party 13!"
+	"menusystem"	"1"
+}
