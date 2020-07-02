@@ -5,9 +5,9 @@
 -- State: Board
 --
 
-STATE_BOARD = "Board"
+PLAYER_STATE_BOARD = "Board"
 
-GM.AddPlayerState( STATE_BOARD, {
+GM.AddPlayerState( PLAYER_STATE_BOARD, {
 	OnStart = function( self, ply )
 		print( "start!" )
 	end,

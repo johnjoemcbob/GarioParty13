@@ -30,7 +30,7 @@ if ( SERVER ) then
 end
 Sound_Boo = Sound( "boo.wav" )
 if ( CLIENT ) then
-	Material_Mouth = Material( "mouth.png", "noclamp smooth" )
+	--Material_Mouth = Material( "mouth.png", "noclamp smooth" )
 	Material_Eye = Material( "eye.png", "noclamp smooth" )
 end
 

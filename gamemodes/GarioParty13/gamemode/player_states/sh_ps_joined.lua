@@ -5,9 +5,9 @@
 -- State: Lobby
 --
 
-STATE_JOINED = "Joined"
+PLAYER_STATE_JOINED = "Joined"
 
-GM.AddPlayerState( STATE_JOINED, {
+GM.AddPlayerState( PLAYER_STATE_JOINED, {
 	OnStart = function( self, ply )
 		print( "start!" )
 	end,

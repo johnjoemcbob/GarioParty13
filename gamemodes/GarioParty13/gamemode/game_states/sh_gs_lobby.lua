@@ -10,6 +10,8 @@ STATE_LOBBY = "Lobby"
 GM.AddGameState( STATE_LOBBY, {
 	OnStart = function( self )
 		print( "start!" )
+		-- TODO TEMP
+		--timer.Simple( 5, function() GAMEMODE:SwitchState( STATE_BOARD ) end )
 	end,
 	OnThink = function( self )
 		

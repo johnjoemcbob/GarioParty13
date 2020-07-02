@@ -140,7 +140,7 @@ hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerStates_PlayerInitialSpawn"
 	print( "initial spawn please")
 	print( ply )
 	ply:SetState( STATE_ERROR )
-	ply:SwitchState( STATE_JOINED )
+	ply:SwitchState( PLAYER_STATE_JOINED )
 end )
 
 hook.Add( "Think", HOOK_PREFIX .. "PlayerStates_Think", function()

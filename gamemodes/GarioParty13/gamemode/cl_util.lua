@@ -178,3 +178,49 @@ local current_colmods = {}
 			table.remove( current_colmods, last )
 		end
 	end
+
+function GM.AddModel( mdl, pos, ang, floatscale, mat, col, ren )
+	if ( !ren ) then ren = RENDERGROUP_OTHER end
+	if ( !col ) then col = COLOUR_WHITE end
+
+	local model = ClientsideModel( mdl, ren )
+		model:SetPos( pos )
+		model:SetAngles( ang )
+		model:SetModelScale( floatscale )
+		model:SetMaterial( mat )
+		model:SetColor( col )
+		model.Pos = pos
+		model.Ang = ang
+		-- model.RenderBoundsMin, model.RenderBoundsMax = model:GetRenderBounds()
+	return model
+end
+
+function GM.AddAnim( mdl, anim, pos, ang, floatscale, mat, col, ren )
+	if ( !ren ) then ren = RENDERGROUP_OTHER end
+	if ( !col ) then col = COLOUR_WHITE end
+
+	local animprop = ents.CreateClientside( "base_anim" )
+		animprop:SetModel( mdl )
+		animprop:SetPos( pos )
+		animprop:SetAngles( ang )
+		animprop:SetModelScale( floatscale )
+		animprop:SetMaterial( mat )
+		animprop:SetColor( col )
+		animprop.MyAnim = anim
+		animprop.MyPlaybackRate = 1
+		animprop.NextPlay = 0
+
+		animprop.IsPaused = false
+	animprop:Spawn()
+		animprop:SetSolid( SOLID_NONE )
+		animprop:ResetSequence( animprop:LookupSequence( animprop.MyAnim ) )
+	animprop:Activate()
+
+	return animprop
+end
+
+function GM.RenderScale( ent, vecscale )
+	local mat = Matrix()
+		mat:Scale( vecscale )
+	ent:EnableMatrix( "RenderMultiply", mat )
+end

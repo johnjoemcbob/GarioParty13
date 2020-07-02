@@ -53,7 +53,7 @@ if ( CLIENT ) then
 		if ( oldstate != STATE_ERROR ) then
 			GAMEMODE.GameStates[oldstate]:OnFinish()
 		end
-		GAMEMODE.SetState( newstate )
+		GAMEMODE:SetState( newstate )
 		GAMEMODE.GameStates[newstate]:OnStart()
 	end )
 end
@@ -65,17 +65,17 @@ end
 
 function GM:SwitchState( state )
 	local self = GAMEMODE
-	if ( GAMEMODE.GetStateName() == state ) then return end
+	if ( self:GetStateName() == state ) then return end
 
 	local oldstate = self:GetStateName()
-	if ( oldstate != STATE_ERROR ) then
+	if ( oldstate and oldstate != STATE_ERROR ) then
 		self:GetState():OnFinish( self )
 	end
 	self:SetState( state )
 	self:GetState():OnStart( self )
 
 	if ( SERVER ) then
-		GAMEMODE.BroadcastGameState( oldstate, state )
+		self.BroadcastGameState( oldstate, state )
 	end
 end
 

@@ -5,9 +5,9 @@
 -- State: Minigame
 --
 
-STATE_MINIGAME = "Minigame"
+PLAYER_STATE_MINIGAME = "Minigame"
 
-GM.AddPlayerState( STATE_MINIGAME, {
+GM.AddPlayerState( PLAYER_STATE_MINIGAME, {
 	OnStart = function( self, ply )
 		print( "start!" )
 	end,

@@ -77,6 +77,15 @@ function table.shallowcopy( orig )
 	return copy
 end
 
+function table.indexOf( tab, val )
+	for index, v in pairs( tab ) do
+		if ( v == val ) then
+			return index
+		end
+	end
+	return -1
+end
+
 function UnNaNVector( vector, default )
 	-- NaN isn't equal to itself
 	if ( vector and vector.x == vector.x and vector.y == vector.y and vector.z == vector.z ) then

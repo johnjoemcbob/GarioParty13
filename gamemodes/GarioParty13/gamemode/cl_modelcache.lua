@@ -23,7 +23,7 @@ function GM.GetCachedModel( model, ren )
 	return GAMEMODE.CachedModels[ren][model]
 end
 
-function GM.RenderCachedModel( model, pos, ang, sca, mat, col, ren, extra )
+function GM.RenderCachedModel( model, pos, ang, vecsca, mat, col, ren, extra )
 	if ( !col ) then
 		col = Color( 255, 255, 255, 255 )
 	end
@@ -32,7 +32,7 @@ function GM.RenderCachedModel( model, pos, ang, sca, mat, col, ren, extra )
 	render.SetColorModulation( col.r / 255, col.g / 255, col.b / 255 )
 		ent:SetPos( pos )
 		ent:SetAngles( ang )
-		GAMEMODE.RenderScale( ent, sca )
+		GAMEMODE.RenderScale( ent, vecsca )
 		ent:SetupBones()
 
 		ent:SetMaterial( mat )
@@ -43,25 +43,4 @@ function GM.RenderCachedModel( model, pos, ang, sca, mat, col, ren, extra )
 	render.SetColorModulation( 1, 1, 1 )
 
 	return ent
-end
-
-function GM.AddModel( mdl, pos, ang, scale, mat, col, ren )
-	if ( !ren ) then ren = RENDERGROUP_OTHER end
-
-	local model = ClientsideModel( mdl, ren )
-		model:SetPos( pos )
-		model:SetAngles( ang )
-		model:SetModelScale( scale )
-		model:SetMaterial( mat )
-		model:SetColor( col )
-		model.Pos = pos
-		model.Ang = ang
-		-- model.RenderBoundsMin, model.RenderBoundsMax = model:GetRenderBounds()
-	return model
-end
-
-function GM.RenderScale( ent, scale )
-	local mat = Matrix()
-		mat:Scale( scale )
-	ent:EnableMatrix( "RenderMultiply", mat )
 end

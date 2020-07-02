@@ -45,7 +45,7 @@ if ( CLIENT ) then
 		table.insert( WORLDTEXTS, { Pos = pos, Vel = vel, Angle = ang, Scale = scale, Text = text, Colour = colour, Dur = dur, InOut = inout, Start = CurTime(), RandomAngle = rnd } )
 	end
 
-	hook.Add( "PreDrawEffects", HOOK_PREFIX .. "_WorldText_PreDrawEffects", function( ply )
+	hook.Add( "PreDrawEffects", HOOK_PREFIX .. "_WorldText_PreDrawEffects", function()
 		local toremove = {}
 		for k, text in pairs( WORLDTEXTS ) do
 			local progress = ( CurTime() - text.Start ) / text.Dur
