@@ -72,11 +72,12 @@ GM.AddGame( "Default", "", {
 	end,
 
 	-- Custom functions
+	Finish = function( self )
+		GAMEMODE:SwitchState( STATE_BOARD )
+	end,
 	Win = function( self, ply )
 		ply.WonLastGame = true
-	end,
-	Lose = function( self, ply )
-		ply.WonLastGame = false
+		self:Finish()
 	end,
 	-- Custom functions: Constants
 	StartConstants = function( self )

@@ -116,6 +116,8 @@ function meta_ply:SetGame( game )
 		self:StoreOnJoinGame()
 		self:GetGame():PlayerJoin( self )
 		self:GetGame():PlayerSpawn( self )
+		self.WonLastGame = false
+		self:SetNWInt( "Score", 0 )
 	end
 end
 
@@ -162,6 +164,30 @@ function meta_ply:StoreOnJoinGame()
 		self.OldModel = self:GetModel()
 		self.OldColour = self:GetColor()
 		self.OldFOV = self:GetFOV()
+	end
+end
+
+function meta_ply:HideFPSController()
+	if ( !self.LastFPSController ) then
+		self.LastFPSController = {
+			self:GetPos(),
+			self:EyeAngles()
+		}
+		if ( SERVER ) then
+			self:ExitVehicle()
+			self:SetPos( Vector( 947, -630, -144 ) )
+			self:SetMoveType( MOVETYPE_NONE )
+		end
+	end
+end
+function meta_ply:ShowFPSController()
+	if ( self.LastFPSController ) then
+		if ( SERVER ) then
+			self:SetMoveType( MOVETYPE_WALK )
+		end
+		self:SetPos( self.LastFPSController[1] )
+		self:SetEyeAngles( self.LastFPSController[2] )
+		self.LastFPSController = nil
 	end
 end
 

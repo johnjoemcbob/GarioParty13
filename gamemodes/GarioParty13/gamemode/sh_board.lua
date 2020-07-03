@@ -8,7 +8,7 @@
 local HOOK_PREFIX = HOOK_PREFIX .. "Board_"
 
 GP13_BOARD_SCALE		= 100
-GP13_BOARD_POS			= Vector( -566, -151, -15 )
+GP13_BOARD_POS			= Vector( 0, 0, 0 )
 GP13_BOARD_SPACE_MODEL	= "models/hunter/blocks/cube1x1x025.mdl"
 
 SPACE_TYPE_DEFAULT	= 0
@@ -16,10 +16,11 @@ SPACE_TYPE_NEGATIVE	= 1
 
 Board = Board or {}
 local function setupboard()
-	AddBoardSpace( 1, 1, SPACE_TYPE_DEFAULT, { Vector( 1, 2 ) } )
-	AddBoardSpace( 1, 2, SPACE_TYPE_DEFAULT, { Vector( 3, 3 ) } )
-	AddBoardSpace( 3, 3, SPACE_TYPE_DEFAULT, { Vector( 3, 1 ) } )
-	AddBoardSpace( 3, 1, SPACE_TYPE_DEFAULT, { Vector( 1, 1 ) } )
+	Board.Data = {}
+	AddBoardSpace( 1, 1, SPACE_TYPE_DEFAULT, { Vector( 2, 2 ) } )
+	AddBoardSpace( 2, 2, SPACE_TYPE_DEFAULT, { Vector( 2, 3 ) } )
+	AddBoardSpace( 2, 3, SPACE_TYPE_DEFAULT, { Vector( 2, 4 ) } )
+	AddBoardSpace( 2, 4, SPACE_TYPE_DEFAULT, { Vector( 1, 1 ) } )
 end
 
 -- Connections are one way by default
@@ -46,7 +47,7 @@ if ( CLIENT ) then
 					Dice:RequestHit()
 				end
 			end
-			if ( !Dice.Current and !ply.TempTargetSpace and ply.BoardModel.Moves > 0 ) then
+			if ( !Dice.Current and !ply.TempTargetSpace and ply.BoardModel and ply.BoardModel.Moves > 0 ) then
 				local space = ply.TempCurrentSpace
 				ply.TempTravel = 0
 				ply.TempTargetSpace = Board.Data[space.x][space.y].Connections[1]
@@ -63,6 +64,7 @@ if ( CLIENT ) then
 				local pos = GP13_BOARD_POS
 				local ang = Angle( 0, 0, 0 )
 				ply.BoardModel = GAMEMODE.AddAnim( "models/eli.mdl", "run_all", pos, ang, 1 )
+				ply.BoardModel.Moves = 0
 			end
 
 			if ( ply.TempTargetSpace ) then
@@ -121,7 +123,7 @@ if ( CLIENT ) then
 		end
 	end )
 
-	hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "PostDrawOpaqueRenderables", function()
+	function Board:Render()
 		for x, ys in pairs( Board.Data ) do
 			for y, space in pairs( ys ) do
 				local pos = GP13_BOARD_POS + Vector( x, y ) * GP13_BOARD_SCALE
@@ -148,7 +150,7 @@ if ( CLIENT ) then
 				ply.BoardModel:DrawModel()
 			end
 		end
-	end )
+	end
 end
 
 setupboard()

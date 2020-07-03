@@ -1,0 +1,20 @@
+{
+	"base": {
+		"2": "[0 0 0]",
+		"1": "models/props_phx/huge/road_medium.mdl",
+		"3": "{0 0 0}",
+		"Scale": "[0.2 0.2 0.2]"
+	},
+	"301": {
+		"2": "[64.8 16 -70.8875]",
+		"1": "models/props_buildings/row_res_1_fullscale.mdl",
+		"3": "{0 90 0}",
+		"Scale": "[0.2 0.2 0.2]"
+	},
+	"297": {
+		"2": "[-32.4 -195.78872 0]",
+		"1": "models/props_phx/huge/road_curve.mdl",
+		"3": "{0 0 0}",
+		"Scale": "[0.2 0.2 0.2]"
+	}
+}

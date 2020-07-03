@@ -50,6 +50,7 @@ if ( CLIENT ) then
 		local newstate = net.ReadString()
 
 		-- Start/Finish clientside
+		Transition:Start()
 		if ( oldstate != STATE_ERROR ) then
 			GAMEMODE.GameStates[oldstate]:OnFinish()
 		end
@@ -64,17 +65,20 @@ function GM:SetState( state )
 end
 
 function GM:SwitchState( state )
-	local self = GAMEMODE
-	if ( self:GetStateName() == state ) then return end
-
-	local oldstate = self:GetStateName()
-	if ( oldstate and oldstate != STATE_ERROR ) then
-		self:GetState():OnFinish( self )
-	end
-	self:SetState( state )
-	self:GetState():OnStart( self )
-
 	if ( SERVER ) then
+		local self = GAMEMODE
+		if ( self:GetStateName() == state ) then return end
+
+		local oldstate = self:GetStateName()
+		-- Delay to try and line up with client transition effect
+		--timer.Simple( 0.5, function()
+			if ( oldstate and oldstate != STATE_ERROR ) then
+				self:GetState():OnFinish( self )
+			end
+			self:SetState( state )
+			self:GetState():OnStart( self )
+		--end )
+
 		self.BroadcastGameState( oldstate, state )
 	end
 end
@@ -94,7 +98,9 @@ hook.Add( "Initialize", HOOK_PREFIX .. "GameStates_Initialize", function()
 end )
 hook.Add( "Think", HOOK_PREFIX .. "GameStates_Think", function()
 	--print( GAMEMODE.GetStateName() )
-	GAMEMODE:GetState():OnThink()
+	if ( GAMEMODE:GetStateName() != STATE_ERROR ) then
+		GAMEMODE:GetState():OnThink()
+	end
 end )
 
 -- Show current state on HUD

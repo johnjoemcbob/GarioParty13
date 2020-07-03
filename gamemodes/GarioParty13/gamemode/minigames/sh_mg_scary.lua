@@ -20,6 +20,8 @@ local PILLARS = {
 local PILLAR_HEIGHT = 120
 local PILLAR_RADIUS = 30
 
+local WIN_SCORE = 5
+
 -- Resources
 if ( SERVER ) then
 	resource.AddFile( "materials/eye.png" )
@@ -152,7 +154,11 @@ GM.AddGame( NAME, "Default", {
 				-- Update scores!
 				local scare = ply:GetNWEntity( "ScaredBy", ply )
 				if ( scare and scare:IsValid() and scare != ply ) then
-					scare:SetNWInt( "Score", scare:GetNWInt( "Score", 0 ) + 1 )
+					local new = scare:GetNWInt( "Score", 0 ) + 1
+					scare:SetNWInt( "Score", new )
+					if ( new >= WIN_SCORE ) then
+						self:Win( ply )
+					end
 				else
 					ply:SetNWInt( "Score", ply:GetNWInt( "Score", 0 ) - 1 )
 				end
