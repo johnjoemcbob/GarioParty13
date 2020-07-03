@@ -39,7 +39,10 @@ end
 GM.AddGame( NAME, "Default", {
 	Author = "johnjoemcbob",
 	Colour = Color( 255, 255, 0, 255 ),
-	Instructions = "Left click to BOO!\nKnock other players off the platforms to win!",
+	TagLine = "Boo! Ah!",
+	Instructions = "Knock other players off the platforms to win!",
+	Controls = "Left click to BOO!",
+	GIF = "http://johnjoemcbob.com/wp-content/uploads/2020/06/garioparty_thumb.gif",
 	HideDefaultHUD = true,
 	HideLabels = true,
 	HideDefaultExtras = {

@@ -16,6 +16,7 @@ function includeanddownload()
 		"sh_gs_lobby",
 		"sh_gs_board",
 		"sh_gs_minigame",
+		"sh_gs_minigame_intro",
 	}
 	for k, file in pairs( files ) do
 		local path = dir .. file .. ".lua"
@@ -51,11 +52,13 @@ if ( CLIENT ) then
 
 		-- Start/Finish clientside
 		Transition:Start()
-		if ( oldstate != STATE_ERROR ) then
-			GAMEMODE.GameStates[oldstate]:OnFinish()
-		end
-		GAMEMODE:SetState( newstate )
-		GAMEMODE.GameStates[newstate]:OnStart()
+		timer.Simple( TRANSITION_DURATION, function()
+			if ( oldstate != STATE_ERROR ) then
+				GAMEMODE.GameStates[oldstate]:OnFinish()
+			end
+			GAMEMODE:SetState( newstate )
+			GAMEMODE.GameStates[newstate]:OnStart()
+		end )
 	end )
 end
 
@@ -68,16 +71,19 @@ function GM:SwitchState( state )
 	if ( SERVER ) then
 		local self = GAMEMODE
 		if ( self:GetStateName() == state ) then return end
+		if ( self.Transitioning ) then return end
 
 		local oldstate = self:GetStateName()
 		-- Delay to try and line up with client transition effect
-		--timer.Simple( 0.5, function()
+		self.Transitioning = true
+		timer.Simple( TRANSITION_DURATION, function()
 			if ( oldstate and oldstate != STATE_ERROR ) then
 				self:GetState():OnFinish( self )
 			end
 			self:SetState( state )
 			self:GetState():OnStart( self )
-		--end )
+			self.Transitioning = false
+		end )
 
 		self.BroadcastGameState( oldstate, state )
 	end

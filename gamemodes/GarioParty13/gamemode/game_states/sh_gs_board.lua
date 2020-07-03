@@ -27,7 +27,7 @@ GM.AddGameState( STATE_BOARD, {
 	OnThink = function( self )
 		local next = Turn:Think()
 		if ( !next ) then
-			GAMEMODE:SwitchState( STATE_MINIGAME )
+			GAMEMODE:SwitchState( STATE_MINIGAME_INTRO )
 		end
 	end,
 	OnFinish = function( self )

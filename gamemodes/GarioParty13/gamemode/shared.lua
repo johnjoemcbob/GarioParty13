@@ -26,10 +26,16 @@ DEBUG_NOSTRIP = false
 
 HOOK_PREFIX			= "GarioParty13_"
 
+TRANSITION_DURATION	= 1
+
 -- COLOURS
-COLOUR_BLACK		= Color( 0, 0, 0, 255 )
-COLOUR_WHITE		= Color( 255, 255, 255, 255 )
-GM.ColourPalette	= {
+COLOUR_BLACK					= Color( 0, 0, 0, 255 )
+COLOUR_WHITE					= Color( 255, 255, 255, 255 )
+COLOUR_UI_BACKGROUND			= Color( 50, 100, 200, 255 )
+COLOUR_UI_BACKGROUND_HIGHLIGHT	= Color( 70, 120, 220, 255 )
+COLOUR_UI_TEXT_DARK				= Color( 80, 80, 80, 255 )
+COLOUR_UI_TEXT_MED				= Color( 160, 160, 160, 255 )
+GM.ColourPalette				= {
 	Color( 0, 184, 148, 255 ),
 	Color( 255, 159, 243, 255 ),
 	Color( 108, 92, 231, 255 ),
