@@ -160,6 +160,10 @@ function GetPrettyAngle( angle )
 	return "Angle( " .. math.Round( angle.p ) .. ", " .. math.Round( angle.y ) .. ", " .. math.Round( angle.r ) .. " )"
 end
 
+function Get2DDirection( angle )
+	return Vector( math.cos( angle ), math.sin( angle ) )
+end
+
 function rotate_point( pointX, pointY, originX, originY, angle )
 	angle = angle * math.pi / 180
 	return {
