@@ -9,6 +9,7 @@ GM.AddGame( "Default", "", {
 	Author = "johnjoemcbob",
 	Colour = Color( 255, 255, 0, 255 ),
 	Instructions = "Hold TAB to select a game",
+	HideDefaultHUD = true,
 
 	Init = function( self )
 		-- Runs on CLIENT and SERVER realms!

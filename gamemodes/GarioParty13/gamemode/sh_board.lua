@@ -95,7 +95,7 @@ if ( CLIENT ) then
 				local ang = ( targetpos - pos ):Angle()
 
 				-- Update
-				ply.BoardModel:SetPos( pos + Vector( 0, 0, 10 ) * k )
+				ply.BoardModel:SetPos( pos )
 				ply.BoardModel:SetAngles( ang )
 
 				-- Loop run animation

@@ -93,6 +93,10 @@ if ( SERVER ) then
 			attacker:GetGame():PlayerGotKill( victim, inflictor, attacker )
 		end
 	end )
+
+	hook.Add( "PlayerSwitchFlashlight", HOOK_PREFIX .. "PlayerSwitchFlashlight", function( ply, enabled )
+		return false
+	end )
 end
 
 if ( CLIENT ) then
@@ -125,56 +129,7 @@ if ( CLIENT ) then
 		if ( game and game.PreHUDPaint ) then
 			game:PreHUDPaint()
 		end
-	
-		local midx = ScrW() / 2
-		local topy = 8 --ScrH() / 32
-		local colour_box = Color( 0, 0, 0, 128 )
-		local colour = Color( 255, 255, 255, 255 )
-	
-		-- Draw a background rect to the text
-		local width = 256
-		local height = 48
-		draw.RoundedBox( 8, midx - width / 2, topy, width, height, colour_box ) -- 0, 0 is Screen top left
-	
-		-- Draw some text at the top of the screen
-		if ( LocalPlayer():GetGame() ) then
-			local name = LocalPlayer():GetGameName()
-			local author = LocalPlayer():GetGame().Author
-			draw.SimpleText( name, "DermaLarge", midx, topy, LocalPlayer():GetGame().Colour, TEXT_ALIGN_CENTER )
-			draw.SimpleText( "by " .. author, "DermaDefault", midx, topy + 32, colour, TEXT_ALIGN_CENTER )
-		end
-	
-		-- Instructions
-		if ( game and game.Instructions and game.Instructions != "" ) then
-			-- local x = ScrW()
-			local x = 0
-			local y = 0
-			local txt = game.Instructions
-			local font = "DermaDefault"
-			local border = 12
-			local lineheight = 16
-	
-			-- Get size
-			surface.SetFont( font )
-			local width, height = surface.GetTextSize( txt )
-				width = width + border
-				height = height + border
-	
-			-- Draw a background rect to the text
-			draw.RoundedBox( 2, x - width, y, width, height, colour_box ) -- 0, 0 is Screen top left
-			draw.RoundedBox( 2, x - 0, y, width, height, colour_box ) -- 0, 0 is Screen top left
-	
-			-- Draw some text at the top of the screen
-			surface.SetTextColor( 255, 255, 255 )
-			local txts = string.Split( txt, '\n' )
-			for k, txt in pairs( txts ) do
-				surface.SetTextPos( x - width + border / 2, y + border / 4 ) 
-				surface.SetTextPos( x - 0 + border / 2, y + border / 4 ) 
-				surface.DrawText( txt )
-				y = y + lineheight
-			end
-		end
-	
+
 		-- Game specific
 		if ( game and game.HUDPaint ) then
 			game:HUDPaint()
@@ -231,34 +186,6 @@ if ( CLIENT ) then
 	
 		-- Hide labels option in games
 		if ( LocalPlayer():GetGame() and LocalPlayer():GetGame().HideLabels == true ) then return end
-	
-		if ( !IsValid( ply ) ) then return end 
-		if ( ply == LocalPlayer() ) then return end -- Don't draw a name when the player is you
-		if ( !ply:Alive() ) then return end -- Check if the player is alive
-		if ( ply:GetGame() == nil ) then return end
-	 
-		local Distance = LocalPlayer():GetPos():Distance( ply:GetPos() ) --Get the distance between you and the player
-		
-		-- if ( Distance < 1000 ) then --If the distance is less than 1000 units, it will draw the name
-	 
-			local offset = Vector( 0, 0, 75 )
-			local ang = LocalPlayer():EyeAngles()
-			local pos = ply:GetPos() + offset + ang:Up()
-	
-			ang:RotateAroundAxis( ang:Forward(), 90 )
-			ang:RotateAroundAxis( ang:Right(), 90 )
-	
-			-- print( 0.025 * Distance )
-			local scale = math.min( 0.01 + 0.001 * Distance, 2 )
-			local off = Vector( 0, 0, 50 ) * scale
-			cam.IgnoreZ( true )
-				cam.Start3D2D( pos + off, Angle( 0, ang.y, 90 ), scale )
-					local colour = ply:GetGame().Colour
-					draw.DrawText( ply:GetName(), "DermaLarge", 2, 2, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
-					draw.DrawText( ply:GetGameName(), "DermaLarge", 2, 2 + 24, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
-				cam.End3D2D()
-			cam.IgnoreZ( false )
-		-- end
 	end )
 
 	hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "PostDrawOpaqueRenderables", function( depth, skybox )

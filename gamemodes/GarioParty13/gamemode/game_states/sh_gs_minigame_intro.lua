@@ -7,7 +7,17 @@
 
 STATE_MINIGAME_INTRO = "Minigame_Intro"
 
-MinigameIntroPanel = MinigameIntroPanel or nil
+local HOOK_PREFIX = HOOK_PREFIX .. STATE_MINIGAME_INTRO .. "_"
+
+MinigameIntro = Minigame or {}
+MinigameIntro.Panel = MinigameIntro.Panel or nil
+
+READY_NONE		= 0
+READY_REAL		= 1
+READY_PRACTICE	= 2
+
+local LERPSPEED = 600
+local LERPSIZESPEED = 200
 
 -- Resources
 if ( SERVER ) then
@@ -37,269 +47,185 @@ end
 
 GM.AddGameState( STATE_MINIGAME_INTRO, {
 	OnStart = function( self )
+		-- Init columns of readiness
 		if ( CLIENT ) then
-			CreateMinigameIntroUI( "Scary Game" )
+			MinigameIntro.Columns = {}
+			MinigameIntro.Columns[READY_NONE] = {}
+			MinigameIntro.Columns[READY_REAL] = {}
+			MinigameIntro.Columns[READY_PRACTICE] = {}
 		end
 
-		timer.Simple( 10, function()
-			GAMEMODE:SwitchState( STATE_MINIGAME )
-		end )
+		-- Initialise none ready
+		MinigameIntro.Ready = {}
+		for k, ply in pairs( player.GetAll() ) do
+			MinigameIntro:SetReady( ply, READY_NONE )
+
+			-- Bot testing
+			if ( ply:IsBot() ) then
+				timer.Simple( 0.5 + 0.5 * k, function()
+					MinigameIntro:MoveReady( ply, 1 )
+				end )
+			end
+		end
+
+		-- Create UI
+		if ( CLIENT ) then
+			MinigameIntro:CreateMinigameIntroUI( "Scary Game" )
+		end
+
+		-- TEMP TODO
+		-- timer.Simple( 10, function()
+		-- 	GAMEMODE:SwitchState( STATE_MINIGAME )
+		-- end )
 	end,
 	OnThink = function( self )
 		if ( CLIENT ) then
 			if ( Transition.Active ) then
-				CreateMinigameIntroUIOverlay()
+				MinigameIntro:CreateMinigameIntroUIOverlay()
 			end
 		end
 	end,
 	OnFinish = function( self )
-		if ( MinigameIntroPanel and MinigameIntroPanel:IsValid() ) then
-			MinigameIntroPanel:Remove()
-			MinigameIntroPanel = nil
+		if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
+			MinigameIntro.Panel:Remove()
+			MinigameIntro.Panel = nil
 		end
 	end,
 })
 
+-- Net
+local NETSTRING = HOOK_PREFIX .. "Net_"
+local NET_INT = 3
+if ( SERVER ) then
+	util.AddNetworkString( NETSTRING )
+
+	function MinigameIntro:BroadcastReady( ply, ready )
+		-- Communicate to all clients
+		net.Start( NETSTRING )
+			net.WriteEntity( ply )
+			net.WriteInt( ready, NET_INT )
+		net.Broadcast()
+	end
+end
 if ( CLIENT ) then
-	local backgrounds = {
-		{ -- Lines
-			Init = function( panel )
-				panel.Lines = math.random( 30, 100 )
-				panel.Height = math.random( 1, 5 )
-				panel.Angle = math.random( 60, 80 )
-				panel.Speed = math.random( -0.5, 0.5 )
-			end,
-			Render = function( panel, w, h )
-				local lines = panel.Lines
-				local height = panel.Height
-				local ang = panel.Angle
-				local speed = panel.Speed
-				local progress = ( CurTime() * speed ) % 2
-				for line = 1, lines do
-					local x = ( line + progress ) / lines * ScrW() * 2 - ScrW()
-					local y = ( line + progress ) / lines * ScrH() * 2 - ScrH()
-					draw.NoTexture()
-					surface.SetDrawColor( Color( 255, 255, 255, 50 ) )
-					surface.DrawTexturedRectRotated( x, y, ScrW() * 2, height, ang )
+	net.Receive( NETSTRING, function( lngth )
+		local ply = net.ReadEntity()
+		local ready = net.ReadInt( NET_INT )
+
+		MinigameIntro:SetReady( ply, ready )
+	end )
+end
+
+-- Functions
+function MinigameIntro:MoveReady( ply, dir )
+	if ( SERVER ) then
+		-- Store on server (& self local)
+		local old = self.Ready[ply]
+		self:SetReady( ply, math.Clamp( old + dir, READY_NONE, READY_PRACTICE ) )
+
+		-- TEMP TODO voting
+		local start = true
+			for k, v in pairs( player.GetAll() ) do
+				if ( self.Ready[v] != READY_REAL ) then
+					start = false
+					break
 				end
-			end,
+			end
+		if ( start ) then
+			GAMEMODE:SwitchState( STATE_MINIGAME )
+		end
+
+		-- Broadcast to clients
+		if ( old != self.Ready[ply] ) then
+			self:BroadcastReady( ply, self.Ready[ply] )
+		end
+	end
+end
+
+function MinigameIntro:SetReady( ply, ready )
+	if ( CLIENT ) then
+		local old = MinigameIntro.Ready[ply]
+		if ( old ) then
+			table.RemoveByValue( self.Columns[old], ply )
+		end
+	end
+
+	self.Ready[ply] = ready
+
+	if ( CLIENT ) then
+		table.insert( self.Columns[ready], ply )
+	end
+end
+
+hook.Add( "KeyPress", HOOK_PREFIX .. "KeyPress", function( ply, key )
+	if ( GAMEMODE:GetStateName() == STATE_MINIGAME_INTRO ) then
+		if ( key == IN_MOVELEFT ) then
+			MinigameIntro:MoveReady( ply, -1 )
+		end
+		if ( key == IN_MOVERIGHT ) then
+			MinigameIntro:MoveReady( ply, 1 )
+		end
+	end
+end )
+
+-- UI
+if ( CLIENT ) then
+	local layouts = {
+		[1] = {
+			{ Vector( 0, 0 ), 128 },
 		},
-		{ -- Hearts
-			Init = function( panel )
-				panel.HeartSize = 128 * math.random( 2, 6 ) 
-				panel.Angle = math.random( 60, 80 )
-				panel.Speed = 0.04 / panel.HeartSize * 256
-			end,
-			Render = function( panel, w, h )
-				local size = panel.HeartSize
-				local ang = panel.Angle
-				local speed = panel.Speed
-				local progress = ( CurTime() * speed ) % 2
-				local dirs = math.ceil( ScrW() / size / 2 ) + 2
-				for r = -dirs, dirs do
-					for c = -dirs, dirs do
-						local x = r * size + ScrW() / 2 + progress * size
-						local y = c * size + ScrH() / 2 + progress * size
-						local point = rotate_point( x, y, ScrW() / 2, ScrH() / 2, -ang )
-							x = point[1]
-							y = point[2]
-						surface.SetDrawColor( COLOUR_WHITE )
-						surface.SetMaterial( MAT_HEARTS )
-						surface.DrawTexturedRectRotated( x, y, size, size, ang )
-					end
-				end
-			end,
+		[4] = {
+			{ Vector( -32, 0 ), 64 },
+			{ Vector( 32, 0 ), 64 },
+			{ Vector( -32, 64 ), 64 },
+			{ Vector( 32, 64 ), 64 },
 		},
-		-- { -- Weird and not great
-		-- 	Init = function( panel )
-		-- 		panel.Point = Vector( math.random( 0, ScrW() ), math.random( 0, ScrH() ) )
-		-- 		panel.Radius = 64
-		-- 		panel.Lines = math.random( 6, 16 )
-		-- 		panel.Height = 4
-		-- 		panel.Speed = 0.01
-		-- 	end,
-		-- 	Render = function( panel, w, h )
-		-- 		-- Central circle
-		-- 		draw.NoTexture()
-		-- 		surface.SetDrawColor( COLOUR_WHITE )
-		-- 		draw.Circle( panel.Point.x, panel.Point.y, panel.Radius + math.sin( CurTime() ) * 4, 64, 0 )
-
-		-- 		-- Draw spokes
-		-- 		local length = ScrW() * 3
-		-- 		local progress = ( CurTime() * panel.Speed ) % 2
-		-- 		for line = 1, panel.Lines do
-		-- 			local ang = 360 / panel.Lines * ( line + progress )
-		-- 			local x = panel.Point.x + ( panel.Radius ) * math.sin( ang )
-		-- 			local y = panel.Point.y + ( panel.Radius ) * math.cos( ang )
-		-- 			surface.DrawTexturedRectRotated( x, y, length, panel.Height, ang )
-		-- 		end
-		-- 	end,
-		-- },
-		{ -- Single cross line, slow move - looks pretty good
-			Init = function( panel )
-				panel.Point = Vector( math.random( ScrW() / 2, ScrW() ), math.random( 0, ScrH() ) )
-				panel.Radius = 64
-				panel.Lines = 4
-				panel.Height = 4
-				panel.Speed = 0.01
-			end,
-			Render = function( panel, w, h )
-				local radius = panel.Radius + math.sin( CurTime() ) * 4
-
-				-- Draw spokes
-				draw.NoTexture()
-				surface.SetDrawColor( COLOUR_WHITE )
-				local length = ScrW() * 3
-				local progress = ( CurTime() * panel.Speed ) % 2
-				for line = 1, panel.Lines do
-					local ang = 360 / panel.Lines * ( line + progress )
-					local x = panel.Point.x + ( radius )
-					local y = panel.Point.y + ( radius )
-					surface.DrawTexturedRectRotated( x, y, length, panel.Height, ang )
-				end
-			end,
-		},
-		-- { -- Weird diamond
-		-- 	Init = function( panel )
-		-- 		panel.Point = Vector( math.random( 0, ScrW() ), math.random( 0, ScrH() ) )
-		-- 		panel.Radius = 64
-		-- 		panel.Lines = 16
-		-- 		panel.Height = 4
-		-- 		panel.Speed = 0.5
-		-- 		if ( math.random( 1, 2 ) == 1 ) then
-		-- 			panel.Speed = 0
-		-- 		end
-		-- 	end,
-		-- 	Render = function( panel, w, h )
-		-- 		local radius = panel.Radius --+ math.sin( CurTime() ) * 4
-
-		-- 		-- Central circle
-		-- 		draw.NoTexture()
-		-- 		surface.SetDrawColor( COLOUR_WHITE )
-		-- 		draw.Circle( panel.Point.x, panel.Point.y, radius, 64, 0 )
-
-		-- 		-- Draw spokes
-		-- 		local length = ScrW() / 3
-		-- 		local progress = ( CurTime() * panel.Speed ) % 2
-		-- 		for line = 1, panel.Lines do
-		-- 			local ang = 360 / panel.Lines * ( line + progress )
-		-- 			local point = rotate_point( panel.Point.x + length / 2, panel.Point.y, panel.Point.x, panel.Point.y, ang )
-		-- 				local x = point[1]
-		-- 				local y = point[2]
-		-- 				print( x .. " " .. y )
-		-- 			surface.DrawTexturedRectRotated( x, y, length, panel.Height, ang )
-		-- 		end
-		-- 	end,
-		-- },
-		-- { -- Target? or something eh
-		-- 	Init = function( panel )
-		-- 		panel.Point = Vector( math.random( 0, ScrW() ), math.random( 0, ScrH() ) )
-		-- 		panel.Point = Vector( ScrW() / 4 * 3, ScrH() / 2 )
-		-- 		panel.Radius = 64
-		-- 		panel.Lines = 4
-		-- 		panel.Height = 4
-		-- 		panel.Speed = 0.01
-		-- 	end,
-		-- 	Render = function( panel, w, h )
-		-- 		local radius = panel.Radius --+ math.sin( CurTime() ) * 4
-
-		-- 		-- Central circle
-		-- 		draw.NoTexture()
-		-- 		surface.SetDrawColor( COLOUR_WHITE )
-		-- 		draw.Circle( panel.Point.x, panel.Point.y, radius, 64, 0 )
-
-		-- 		-- Draw spokes
-		-- 		local length = ScrW() * 3
-		-- 		local progress = 1-- ( CurTime() * panel.Speed ) % 2
-		-- 		for line = 1, panel.Lines do
-		-- 			local ang = 360 / panel.Lines * ( line + progress )
-		-- 			local point = rotate_point( panel.Point.x + length / 2, panel.Point.y, panel.Point.x, panel.Point.y, ang )
-		-- 				local x = point[1]
-		-- 				local y = point[2]
-		-- 			surface.DrawTexturedRectRotated( x, y, length, panel.Height, ang )
-		-- 		end
-		-- 	end,
-		-- },
-		{ -- Cylinder
-			Init = function( panel )
-				panel.Point = Vector( ScrW() / 4 * 3, ScrH() / 2 )
-				panel.Angle = math.random( 0, 90 )
-				panel.Radius = 128
-				panel.Lines = 16
-				panel.Height = 4
-				panel.Speed = 0.01
-			end,
-			Render = function( panel, w, h )
-				local radius = panel.Radius --+ math.sin( CurTime() ) * 4
-
-				draw.NoTexture()
-				surface.SetDrawColor( COLOUR_WHITE )
-
-				-- Draw spokes
-				local length = ScrW() / 2
-				local progress = ( CurTime() * panel.Speed ) % 2
-				for line = 1, panel.Lines do
-					local ang = 360 / panel.Lines * ( line + progress )
-					local dir = Get2DDirection( ang )
-					local x = panel.Point.x + ( panel.Radius + length / 4 ) * math.sin( ang )
-					local y = panel.Point.y + ( panel.Radius + length / 4 ) * math.cos( ang )
-					surface.DrawTexturedRectRotated( x, y, length, panel.Height, panel.Angle )
-				end
-			end,
-		},
-		{ -- Wheel Spokes
-			Init = function( panel )
-				panel.Point = Vector( math.random( ScrW() / 2, ScrW() ), math.random( 0, ScrH() ) )
-				panel.Radius = math.random( 8, 128 )
-				panel.Lines = math.random( 3, 12 )
-				panel.Height = math.random( 4, 12 )
-				panel.Speed = math.random( -0.01, 0.01 )
-			end,
-			Render = function( panel, w, h )
-				local radius = panel.Radius + math.sin( CurTime() ) * 4
-
-				-- Central circle
-				draw.NoTexture()
-				surface.SetDrawColor( COLOUR_WHITE )
-				draw.Circle( panel.Point.x, panel.Point.y, radius, 64, 0 )
-
-				-- Draw spokes
-				local length = ScrW() * 2
-				local height = panel.Height + 2 + math.sin( CurTime() / 2 ) * 4
-				local progress = ( CurTime() * panel.Speed ) % 2
-				for line = 1, panel.Lines do
-					local ang = 360 / panel.Lines * ( line + progress )
-					local x = panel.Point.x + ( panel.Radius ) * math.cos( math.rad( ang ) )
-					local y = panel.Point.y + ( panel.Radius ) * math.sin( math.rad( ang ) )
-					surface.DrawTexturedRectRotated( x, y, length, height, -ang )
-				end
-			end,
+		[9] = {
+			{ Vector( -32	, 0 ), 32 },
+			{ Vector( 0		, 0 ), 32 },
+			{ Vector( 32	, 0 ), 32 },
+			{ Vector( -32	, 32 ), 32 },
+			{ Vector( 0		, 32 ), 32 },
+			{ Vector( 32	, 32 ), 32 },
+			{ Vector( -32	, 64 ), 32 },
+			{ Vector( 0		, 64 ), 32 },
+			{ Vector( 32	, 64 ), 32 },
 		},
 	}
 
 	-- Create UI
-	function CreateMinigameIntroUI( minigame )
+	local time = 0
+	function MinigameIntro:CreateMinigameIntroUI( minigame )
 		local leftx = ScrW() / 3.5
 		local leftwidth = ScrW() / 3
 		local rightwidth = ( ScrW() - ( leftx + leftwidth / 2 ) ) * 0.8
 		local rightx = ( leftx + leftwidth / 2 + rightwidth / 2 ) * 1.15
 
 		-- Fullscreen panel
-		MinigameIntroPanel = vgui.Create( "DPanel" )
-		MinigameIntroPanel:SetSize( ScrW(), ScrH() )
-		MinigameIntroPanel:Center()
-		MinigameIntroPanel:MakePopup()
-		MinigameIntroPanel.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
-		MinigameIntroPanel.Background = math.random( 1, #backgrounds )
-			backgrounds[MinigameIntroPanel.Background].Init( MinigameIntroPanel )
-		function MinigameIntroPanel:Paint( w, h )
+		MinigameIntro.Panel = vgui.Create( "DPanel" )
+		MinigameIntro.Panel:SetSize( ScrW(), ScrH() )
+		MinigameIntro.Panel:Center()
+			MinigameIntro.Panel.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
+			MinigameIntro.Panel.Highlight = GetColourHighlight( MinigameIntro.Panel.Colour )
+			MinigameIntro.Panel.Background = math.random( 1, #GAMEMODE.Backgrounds )
+			GAMEMODE.Backgrounds[MinigameIntro.Panel.Background].Init( MinigameIntro.Panel )
+		function MinigameIntro.Panel:Paint( w, h )
 			-- Draw background blue
 			--surface.SetDrawColor( COLOUR_UI_BACKGROUND )
 			surface.SetDrawColor( self.Colour )
 			surface.DrawRect( 0, 0, w, h )
 
-			-- Draw scrolling lines
-			backgrounds[self.Background].Render( self, w, h )
+			-- TODO TEMP VIDEO
+			-- if ( time <= CurTime() ) then
+			-- 	MinigameIntro.Panel.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
+			-- 	MinigameIntro.Panel.Highlight = GetColourHighlight( MinigameIntro.Panel.Colour )
+			-- 	self.Background = math.random( 1, #GAMEMODE.Backgrounds )
+			-- 	GAMEMODE.Backgrounds[self.Background].Init( self )
+			-- 	time = CurTime() + 1
+			-- end
+
+			-- Draw background
+			GAMEMODE.Backgrounds[self.Background].Render( self, w, h )
 
 			-- Draw foreground white
 			local width = leftwidth * 1.2
@@ -312,7 +238,7 @@ if ( CLIENT ) then
 		local font = "MinigameTitle"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
-		local label = vgui.Create( "DLabel", MinigameIntroPanel )
+		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
 		label:SetPos( leftx - twidth / 2, ScrH() / 18 - theight / 2 )
 		label:SetSize( twidth, theight )
 		label:SetFont( font )
@@ -322,7 +248,7 @@ if ( CLIENT ) then
 		-- Video HTML panel
 		local videowidth = leftwidth * 1.5
 		local width = videowidth * 1.1
-		local html = vgui.Create( "DHTML" , MinigameIntroPanel )
+		local html = vgui.Create( "DHTML" , MinigameIntro.Panel )
 		html:SetSize( width, width )
 		html:SetPos( leftx - videowidth / 2 - 6, ScrH() / 8 * 4.7 - width / 2 )
 		html:SetHTML( [[
@@ -334,7 +260,7 @@ if ( CLIENT ) then
 		local font = "ScoreboardDefault"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
-		local label = vgui.Create( "DLabel", MinigameIntroPanel )
+		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
 		label:SetPos( leftx - twidth / 2, ScrH() / 8 * 6.5 - theight / 2 )
 		label:SetSize( twidth, theight )
 		label:SetFont( font )
@@ -346,7 +272,7 @@ if ( CLIENT ) then
 		local font = "CloseCaption_Normal"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
-		local label = vgui.Create( "DLabel", MinigameIntroPanel )
+		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
 		label:SetPos( leftx - twidth / 2, ScrH() / 8 * 6.8 )
 		label:SetSize( twidth, theight )
 		label:SetFont( font )
@@ -358,7 +284,7 @@ if ( CLIENT ) then
 		local font = "Trebuchet24"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
-		local label = vgui.Create( "DLabel", MinigameIntroPanel )
+		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
 		label:SetPos( rightx - rightwidth / 2.6 - twidth / 2, ScrH() / 7 )
 		label:SetSize( twidth, theight )
 		label:SetFont( font )
@@ -368,19 +294,53 @@ if ( CLIENT ) then
 		-- Players/Votes
 		local font = "CloseCaption_Normal"
 		local y = ScrH() / 6 * 4
-		CreateMinigameIntroUILabel( "Not Ready", font, rightx - rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
-		CreateMinigameIntroUILabel( "VOTE", font, rightx + rightwidth / 3 / 1.7 - twidth / 2, y - 32, COLOUR_UI_TEXT_LIGHT )
-		CreateMinigameIntroUILabel( "Practice", font, rightx - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
-		CreateMinigameIntroUILabel( "Play for Real", font, rightx + rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
+		MinigameIntro:CreateMinigameIntroUILabel( "Not Ready", font, rightx - rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
+		MinigameIntro:CreateMinigameIntroUILabel( "_VOTE_", font, rightx + rightwidth / 3 / 1.7 - twidth / 2, y - 32, COLOUR_UI_TEXT_LIGHT )
+		MinigameIntro:CreateMinigameIntroUILabel( "Play for Real", font, rightx - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
+		MinigameIntro:CreateMinigameIntroUILabel( "Practice", font, rightx + rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
 
 		-- Test player icon
-		local icon = vgui.Create( "DModelPanel", MinigameIntroPanel )
-		icon:SetSize(200,200)
-		icon:SetPos( rightx - rightwidth / 3 - twidth / 2, y + 64 )
-		icon:SetModel( "models/player/alyx.mdl" )
+		for k, ply in pairs( player.GetAll() ) do
+			local icon = vgui.Create( "DModelPanel", MinigameIntro.Panel )
+			--icon:SetSize( 200, 200 )
+			--icon:SetPos( rightx - twidth / 2, y + 64 )
+			icon:SetModel( "models/player/alyx.mdl" )
+			icon.Size = 64
+			function icon:Think()
+				local ready = MinigameIntro.Ready[ply]
+
+				-- Position and scale by number of playres in column
+				local count = #MinigameIntro.Columns[ready]
+				local index = table.indexOf( MinigameIntro.Columns[ready], ply )
+				local layout
+					-- Find closest layout
+					local min = -1
+					for int, lay in pairs( layouts ) do
+						if ( count <= int and ( min == -1 or int < min ) ) then
+							min = int
+						end
+					end
+					layout = layouts[min]
+				local offset = layout[index][1]
+				local size = layout[index][2]
+
+				-- Lerp move
+				local x = {}
+					x[0] = -rightwidth / 3
+					x[1] = 0
+					x[2] = rightwidth / 3
+				local target = Vector( rightx + x[ready] - twidth / 2 + offset.x, y + 32 + offset.y )
+				icon.Pos = icon.Pos or target
+				icon.Pos = ApproachVector( FrameTime() * LERPSPEED, icon.Pos, target )
+				icon:SetPos( icon.Pos.x, icon.Pos.y )
+
+				icon.Size = math.Approach( icon.Size, size, FrameTime() * LERPSIZESPEED )
+				icon:SetSize( icon.Size, icon.Size )
+			end
+		end
  
 		-- Test button
-		-- local DermaButton = vgui.Create( "DButton", MinigameIntroPanel )
+		-- local DermaButton = vgui.Create( "DButton", MinigameIntro.Panel )
 		-- DermaButton:SetText( "Say hi" )
 		-- DermaButton:SetPos( ScrW() - 250, ScrH() - 150 )
 		-- DermaButton:SetSize( 250, 150 )
@@ -389,14 +349,14 @@ if ( CLIENT ) then
 		-- 	print( "HI HI HI" )
 		-- end
 
-		CreateMinigameIntroUIOverlay()
+		MinigameIntro:CreateMinigameIntroUIOverlay()
 	end
 
-	function CreateMinigameIntroUILabel( text, font, x, y, colour )
+	function MinigameIntro:CreateMinigameIntroUILabel( text, font, x, y, colour )
 		surface.SetFont( font )
 		local twidth, theight = surface.GetTextSize( text )
 
-		local label = vgui.Create( "DLabel", MinigameIntroPanel )
+		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
 			label:SetPos( x, y )
 			label:SetSize( twidth, theight )
 			label:SetFont( font )
@@ -405,15 +365,23 @@ if ( CLIENT ) then
 		return label
 	end
 
-	function CreateMinigameIntroUIOverlay()
+	function MinigameIntro:CreateMinigameIntroUIOverlay()
 		-- Transition overlay
-		local overlay = vgui.Create( "DPanel", MinigameIntroPanel )
+		local overlay = vgui.Create( "DPanel", MinigameIntro.Panel )
 		overlay:SetSize( ScrW(), ScrH() )
 		overlay:Center()
 		function overlay:Paint( w, h )
 			if ( Transition.Active ) then
+				if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
+					MinigameIntro.Panel:SetMouseInputEnabled( false )
+				end
 				Transition:Render()
 			else
+				if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
+					-- Wait for transition before showing cursor
+					--MinigameIntro.Panel:MakePopup()
+				end
+
 				overlay:Remove()
 				overlay = nil
 			end
@@ -421,13 +389,13 @@ if ( CLIENT ) then
 	end
 
 	-- TODO TEMP HOTRELOAD TESTING
-	if ( MinigameIntroPanel and MinigameIntroPanel:IsValid() ) then
-		MinigameIntroPanel:Remove()
+	if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
+		MinigameIntro.Panel:Remove()
 	end
-	--CreateMinigameIntroUI( "Scary Game" )
+	--MinigameIntro:CreateMinigameIntroUI( "Scary Game" )
 	-- timer.Simple( 10, function()
-	-- 	if ( MinigameIntroPanel and MinigameIntroPanel:IsValid() ) then
-	-- 		MinigameIntroPanel:Remove()
+	-- 	if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
+	-- 		MinigameIntro.Panel:Remove()
 	-- 	end
 	-- end )
 end

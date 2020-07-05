@@ -42,7 +42,7 @@ GM.AddGame( NAME, "Default", {
 	TagLine = "Boo! Ah!",
 	Instructions = "Knock other players off the platforms to win!",
 	Controls = "Left click to BOO!",
-	GIF = "http://johnjoemcbob.com/wp-content/uploads/2020/06/garioparty_thumb.gif",
+	GIF = "https://i.imgur.com/uSNJNXN.gif",
 	HideDefaultHUD = true,
 	HideLabels = true,
 	HideDefaultExtras = {

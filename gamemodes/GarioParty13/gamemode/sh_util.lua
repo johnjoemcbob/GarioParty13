@@ -43,6 +43,16 @@ function LoadTableFromJSON( path, name )
 	return tab
 end
 
+function GetColourHighlight( colour, amount )
+	if ( !amount ) then amount = 10 end
+	return Color(
+		colour.r + amount,
+		colour.g + amount,
+		colour.b + amount,
+		colour.a
+	)
+end
+
 function LerpColour( dif, current, target )
 	return Color(
 		Lerp( dif, current.r, target.r ),
