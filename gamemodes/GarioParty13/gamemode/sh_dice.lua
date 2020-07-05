@@ -40,6 +40,9 @@ if ( SERVER ) then
 	net.Receive( NETSTRING_REQUEST, function( lngth, ply )
 		if ( Dice.Current and ( ply == Dice.Current or Dice.Current:IsBot() ) ) then
 			Dice:Hit()
+			timer.Simple( 1, function()
+				Turn.State = TURN_MOVE
+			end )
 		end
 	end )
 end
@@ -64,10 +67,10 @@ if ( CLIENT ) then
 		ply.TempDice = nil
 
 		-- Hide soon
-		timer.Simple( 1, function()
-			Dice.Current = nil
-			Turn.State = TURN_MOVE
-		end )
+		-- timer.Simple( 1, function()
+		-- 	Dice.Current = nil
+		-- 	Turn.State = TURN_MOVE
+		-- end )
 	end )
 
 	function Dice:RequestHit()

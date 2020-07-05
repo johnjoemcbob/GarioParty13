@@ -307,6 +307,8 @@ if ( CLIENT ) then
 			icon:SetModel( "models/player/alyx.mdl" )
 			icon.Size = 64
 			function icon:Think()
+				if ( !MinigameIntro.Ready ) then return end
+
 				local ready = MinigameIntro.Ready[ply]
 
 				-- Position and scale by number of playres in column
