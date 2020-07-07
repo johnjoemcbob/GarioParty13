@@ -150,7 +150,8 @@ GM.AddGame( "Default", "", {
 			file.Write( self:GetFileName(), json )
 		end
 	end,
-	GetFileName = function( self )
-		return "garioware13/data_" .. self.Name .. ".txt"
+	GetFileName = function( self, extra )
+		if ( !extra ) then extra = "" end
+		return "garioparty13/data_" .. self.Name .. extra .. ".txt"
 	end,
 } )

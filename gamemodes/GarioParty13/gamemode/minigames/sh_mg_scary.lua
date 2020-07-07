@@ -85,7 +85,8 @@ GM.AddGame( NAME, "Default", {
 		end
 		updateren()
 
-		function addspawner( id, size )
+		function addspawner( id )
+			local size = spawners.Size
 			local index = table.indexOf( table.GetKeys( FaceElements ), id ) - 1
 			local button = vgui.Create( "DButton", spawners )
 				button:SetText( "" )
@@ -103,6 +104,7 @@ GM.AddGame( NAME, "Default", {
 				button:Droppable( DROP_SCARY_FACE )
 				button:Receiver( DROP_SCARY_FACE, dodropdelete )
 			--spawners:AddItem( button )
+			return button
 		end
 
 		function dodrop( self, panels, bDoDrop, Command, x, y )
@@ -117,7 +119,7 @@ GM.AddGame( NAME, "Default", {
 					v:SetParent( drop )
 					if ( v.Spawner ) then
 						v.Spawner = false
-						addspawner( v.ID, v.Size )
+						addspawner( v.ID )
 					end
 					v:SetPos( x + v.Pickup.x, y - v.Pickup.y )
 					v.Pickup = nil
@@ -139,7 +141,7 @@ GM.AddGame( NAME, "Default", {
 					if ( self.Spawner ) then
 						if ( v.Spawner ) then
 							v.Spawner = false
-							addspawner( v.ID, v.Size )
+							addspawner( v.ID )
 						end
 						v:Remove()
 
@@ -187,7 +189,7 @@ GM.AddGame( NAME, "Default", {
 		self.DropFace = drop
  
 		for id, element in pairs( FaceElements ) do
-			addspawner( id, cell )
+			addspawner( id )
 		end
 	end,
 	FinishWaitingUI = function( self )
@@ -201,13 +203,36 @@ GM.AddGame( NAME, "Default", {
 				y = y / h
 			table.insert( face, { child.ID, Vector( x, y ) } )
 		end
-		--LocalPlayer().ScaryFace = face
+		LocalPlayer().ScaryFace = face
 
 		-- Send to server in between and propogate to all other clients
 		MinigameIntro:SendWaitingToServer( face )
 	end,
 	ReceiveWaiting = function( self, ply, tab )
 		ply.ScaryFace = tab
+	end,
+	LoadWaiting = function( self )
+		local json = file.Read( self:GetFileName( "waiting" ), "DATA" )
+		if !json then return end
+
+		local tab = util.JSONToTable( json )
+		LocalPlayer().ScaryFace = tab
+
+		for k, feature in pairs( tab ) do
+			local spawn = addspawner( feature[1] )
+			local w, h = self.DropFace:GetSize()
+			local x, y = feature[2].x, feature[2].y
+				x = x * w
+				y = y * h
+			spawn.Pickup = Vector( 0, 0 )
+			spawn:SetSize( 128, 128 )
+			dodrop( self.DropFace, { spawn }, true, nil, x, y )
+		end
+	end,
+	SaveWaiting = function( self )
+		-- Save
+		local json = util.TableToJSON( LocalPlayer().ScaryFace )
+		file.Write( self:GetFileName( "waiting" ), json )
 	end,
 
 	SetupDataTables = function( self )
@@ -269,6 +294,12 @@ GM.AddGame( NAME, "Default", {
 
 		if ( CLIENT ) then
 			ply.ClientAngle = Angle( 0, 0, 0 )
+		end
+
+		-- When each player joins, but should all be aroundabout at one time so should be fine??
+		if ( SERVER ) then
+			self:RemoveWorld()
+			self:AddWorld()
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -363,6 +394,7 @@ GM.AddGame( NAME, "Default", {
 						end
 					ent:SetVelocity( vel )
 					ent:SetNWEntity( "ScaredBy", ply )
+					ent.LastScaredTime = CurTime()
 					timer.Simple( 0.1, function()
 						ent:EmitSound( "scared.wav", 75, math.random( 80, 150 ) )
 
@@ -379,10 +411,16 @@ GM.AddGame( NAME, "Default", {
 		end
 	end,
 	OnPlayerHitGround = function( self, ply, inWater, onFloater, speed )
-		-- Delay a little so when they land they still stare at the player if not moving
-		timer.Simple( 0.5, function()
-			ply:SetNWEntity( "ScaredBy", ply )
-		end )
+		-- Don't hit players while falling and think its ground
+		if ( ply:GetPos().z > self["FALL_Z"] ) then
+			-- Delay a little so when they land they still stare at the player if not moving
+			local lastscared = ply.LastScaredTime
+			timer.Simple( 0.5, function()
+				if ( lastscared == ply.LastScaredTime ) then
+					ply:SetNWEntity( "ScaredBy", ply )
+				end
+			end )
+		end
 	end,
 	GetFallDamage = function( self, ply, speed )
 		return 0

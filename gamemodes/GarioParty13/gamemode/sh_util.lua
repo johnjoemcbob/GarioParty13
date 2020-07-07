@@ -421,10 +421,13 @@ if ( SERVER ) then
 			phys:EnableMotion( move )
 
 			-- TODO This won't work for clients that join late!!
-			net.Start( HOOK_PREFIX .. "ScaleEnt" )
-				net.WriteEntity( ent )
-				net.WriteFloat( scale )
-			net.Broadcast()
+			-- Wait for entity to exist on client before sending ref
+			timer.Simple( 0.5, function()
+				net.Start( HOOK_PREFIX .. "ScaleEnt" )
+					net.WriteEntity( ent )
+					net.WriteFloat( scale )
+				net.Broadcast()
+			end )
 		end
 	end
 end

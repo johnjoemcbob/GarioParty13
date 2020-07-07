@@ -21,6 +21,7 @@ function includeanddownload()
 		"sh_mg_screencheat",
 		"sh_mg_goose",
 		"sh_mg_donut",
+		"sh_mg_teeth",
 	}
 	for k, file in pairs( files ) do
 		local path = dir .. file .. ".lua"

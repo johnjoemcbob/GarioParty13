@@ -94,6 +94,9 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 			if ( GAMEMODE.Games[self.Minigame].FinishWaitingUI ) then
 				GAMEMODE.Games[self.Minigame]:FinishWaitingUI()
 			end
+			if ( GAMEMODE.Games[self.Minigame].SaveWaiting ) then
+				GAMEMODE.Games[self.Minigame]:SaveWaiting()
+			end
 		end
 	end,
 })
@@ -340,6 +343,9 @@ if ( CLIENT ) then
 			end
 
 			GAMEMODE.Games[minigame]:CreateWaitingUI( panel, w, h )
+		end
+		if ( GAMEMODE.Games[minigame].LoadWaiting ) then
+			GAMEMODE.Games[minigame]:LoadWaiting()
 		end
 
 		-- Players/Votes
