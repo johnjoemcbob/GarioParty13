@@ -152,6 +152,7 @@ GM.Backgrounds = {
 				local x = panel.Point.x
 				local y = panel.Point.y
 				surface.SetDrawColor( panel.Highlight )
+				draw.NoTexture()
 				draw.CircleSegment( x, y, rad, 64, width, 0, 100 )
 			end
 		end,

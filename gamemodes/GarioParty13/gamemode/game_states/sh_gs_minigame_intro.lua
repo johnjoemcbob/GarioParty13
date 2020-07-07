@@ -9,8 +9,8 @@ STATE_MINIGAME_INTRO = "Minigame_Intro"
 
 local HOOK_PREFIX = HOOK_PREFIX .. STATE_MINIGAME_INTRO .. "_"
 
-MinigameIntro = Minigame or {}
-MinigameIntro.Panel = MinigameIntro.Panel or nil
+MinigameIntro = MinigameIntro or {}
+--MinigameIntro.Panel = MinigameIntro.Panel or nil
 
 READY_NONE		= 0
 READY_REAL		= 1
@@ -47,6 +47,9 @@ end
 
 GM.AddGameState( STATE_MINIGAME_INTRO, {
 	OnStart = function( self )
+		-- TODO TEMP
+		self.Minigame = "Scary Game"
+
 		-- Init columns of readiness
 		if ( CLIENT ) then
 			MinigameIntro.Columns = {}
@@ -70,13 +73,8 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 
 		-- Create UI
 		if ( CLIENT ) then
-			MinigameIntro:CreateMinigameIntroUI( "Scary Game" )
+			MinigameIntro:CreateMinigameIntroUI( self.Minigame )
 		end
-
-		-- TEMP TODO
-		-- timer.Simple( 10, function()
-		-- 	GAMEMODE:SwitchState( STATE_MINIGAME )
-		-- end )
 	end,
 	OnThink = function( self )
 		if ( CLIENT ) then
@@ -86,24 +84,48 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 		end
 	end,
 	OnFinish = function( self )
-		if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
-			MinigameIntro.Panel:Remove()
-			MinigameIntro.Panel = nil
+		if ( CLIENT ) then
+			if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
+				MinigameIntro.Panel:Remove()
+				MinigameIntro.Panel = nil
+			end
+			
+			-- Minigame specific UI
+			if ( GAMEMODE.Games[self.Minigame].FinishWaitingUI ) then
+				GAMEMODE.Games[self.Minigame]:FinishWaitingUI()
+			end
 		end
 	end,
 })
 
 -- Net
 local NETSTRING = HOOK_PREFIX .. "Net_"
+local NETSTRING_WAITING_CUSTOM = HOOK_PREFIX .. "Net_Waiting"
+local NETSTRING_WAITING_BROADCAST = HOOK_PREFIX .. "Net_Waiting_Broadcast"
 local NET_INT = 3
 if ( SERVER ) then
 	util.AddNetworkString( NETSTRING )
+	util.AddNetworkString( NETSTRING_WAITING_CUSTOM )
+	util.AddNetworkString( NETSTRING_WAITING_BROADCAST )
 
 	function MinigameIntro:BroadcastReady( ply, ready )
 		-- Communicate to all clients
 		net.Start( NETSTRING )
 			net.WriteEntity( ply )
 			net.WriteInt( ready, NET_INT )
+		net.Broadcast()
+	end
+
+	net.Receive( NETSTRING_WAITING_CUSTOM, function( lngth, ply )
+		local tab = net.ReadTable()
+		MinigameIntro:BroadcastWaitingCustom( ply, tab )
+	end )
+
+	function MinigameIntro:BroadcastWaitingCustom( ply, tab )
+		-- Communicate to all clients
+		net.Start( NETSTRING_WAITING_BROADCAST )
+			net.WriteEntity( ply )
+			net.WriteTable( tab )
 		net.Broadcast()
 	end
 end
@@ -113,6 +135,23 @@ if ( CLIENT ) then
 		local ready = net.ReadInt( NET_INT )
 
 		MinigameIntro:SetReady( ply, ready )
+	end )
+
+	function MinigameIntro:SendWaitingToServer( tab )
+		-- Send customised waiting stuff to server
+		net.Start( NETSTRING_WAITING_CUSTOM )
+			net.WriteTable( tab )
+		net.SendToServer()
+	end
+
+	net.Receive( NETSTRING_WAITING_BROADCAST, function( lngth )
+		local ply = net.ReadEntity()
+		local tab = net.ReadTable()
+
+		-- Look up minigame receive
+		if ( GAMEMODE.Games[ply:GetGameName()].ReceiveWaiting ) then
+			GAMEMODE.Games[ply:GetGameName()]:ReceiveWaiting( ply, tab )
+		end
 	end )
 end
 
@@ -281,7 +320,7 @@ if ( CLIENT ) then
 
 		-- Minigame controls
 		local text = GAMEMODE.Games[minigame].Controls
-		local font = "Trebuchet24"
+		local font = "CloseCaption_Normal"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
 		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
@@ -289,11 +328,23 @@ if ( CLIENT ) then
 		label:SetSize( twidth, theight )
 		label:SetFont( font )
 		label:SetText( text )
-		label:SetTextColor( COLOUR_UI_TEXT_DARK )
+		label:SetTextColor( COLOUR_UI_TEXT_LIGHT )
+
+		-- Minigame specific UI
+		if ( GAMEMODE.Games[minigame].CreateWaitingUI ) then
+			local w, h = rightwidth, ScrH() / 3
+			local panel = vgui.Create( "DPanel", MinigameIntro.Panel )
+			panel:SetSize( w, h )
+			panel:SetPos( rightx - rightwidth / 2, ScrH() / 3 )
+			function panel:Paint( w, h )
+			end
+
+			GAMEMODE.Games[minigame]:CreateWaitingUI( panel, w, h )
+		end
 
 		-- Players/Votes
 		local font = "CloseCaption_Normal"
-		local y = ScrH() / 6 * 4
+		local y = ScrH() / 6 * 4.5
 		MinigameIntro:CreateMinigameIntroUILabel( "Not Ready", font, rightx - rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
 		MinigameIntro:CreateMinigameIntroUILabel( "_VOTE_", font, rightx + rightwidth / 3 / 1.7 - twidth / 2, y - 32, COLOUR_UI_TEXT_LIGHT )
 		MinigameIntro:CreateMinigameIntroUILabel( "Play for Real", font, rightx - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
@@ -381,7 +432,9 @@ if ( CLIENT ) then
 			else
 				if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
 					-- Wait for transition before showing cursor
-					--MinigameIntro.Panel:MakePopup()
+					MinigameIntro.Panel:MakePopup()
+					MinigameIntro.Panel:MoveToBack()
+					MinigameIntro.Panel:SetKeyboardInputEnabled( false )
 				end
 
 				overlay:Remove()
@@ -393,6 +446,11 @@ if ( CLIENT ) then
 	-- TODO TEMP HOTRELOAD TESTING
 	if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
 		MinigameIntro.Panel:Remove()
+		MinigameIntro.Panel = nil
+		MinigameIntro:CreateMinigameIntroUI( "Scary Game" )
+		MinigameIntro.Panel:MakePopup()
+		MinigameIntro.Panel:MoveToBack()
+		MinigameIntro.Panel:SetKeyboardInputEnabled( false )
 	end
 	--MinigameIntro:CreateMinigameIntroUI( "Scary Game" )
 	-- timer.Simple( 10, function()

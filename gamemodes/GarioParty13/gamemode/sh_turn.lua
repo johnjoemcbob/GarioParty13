@@ -13,6 +13,9 @@ TURN_ROLL		= 0
 TURN_MOVE		= 1
 TURN_CHOOSEDIR	= 2
 
+TURN_INTRO_TIME	= 2
+TURN_ASK_TIME	= 2
+
 -- Net
 local NETSTRING = HOOK_PREFIX .. "Net_Turn"
 local NETSTRING_REQUESTEND = HOOK_PREFIX .. "Net_Turn_RequestEnd"
@@ -75,11 +78,8 @@ if ( CLIENT ) then
 	end
 
 	net.Receive( NETSTRING_ASKDIR, function( lngth )
-		print( "which dir?." )
-		print( "which dir?." )
-		print( "which dir?." )
-		print( "which dir?." )
 		LocalPlayer().AskDir = true
+		Turn.AskTime = CurTime()
 	end )
 
 	function Turn:AnswerDirection( dir )
@@ -106,6 +106,7 @@ function Turn:Start()
 	self.Finished = false
 
 	-- TODO start [PLAYER TURN] intro animation
+	self.StartTime = CurTime()
 
 	self.State = TURN_ROLL
 	Dice:Roll( self.Current )
@@ -204,8 +205,68 @@ if ( CLIENT ) then
 	end )
 
 	hook.Add( "HUDPaint", HOOK_PREFIX .. "HUDPaint", function()
+		-- Turn intro
 		if ( Turn:IsSystemActive() ) then
-			draw.SimpleText( tostring( Turn:Get() ) .. "'s turn!", "DermaDefault", 50, 200, COLOUR_WHITE )
+			local progress = ( CurTime() - Turn.StartTime ) / TURN_INTRO_TIME
+			if ( progress >= 0 and progress <= 1 ) then
+				local center = Vector( ScrW() / 2, ScrH() / 8, ScrW() )
+				local xoff = ScrW() / 2
+				local heightoff = 0-- ScrH() / 4
+				local poses = {
+					[0] = center + Vector( -xoff, heightoff, -ScrW() ),
+					[0.1] = center,
+					--[0.5] = center + Vector( 0, math.sin( CurTime() * 5 ) * 8 ),
+					[0.9] = center,
+					[1] = center + Vector( xoff, -heightoff, -ScrW() ),
+				}
+				local pos = AnimateVectorBetween( progress, poses )
+
+				surface.SetDrawColor( COLOUR_WHITE )
+				surface.DrawTexturedRectRotated( pos.x, pos.y, pos.z, 64, 1 )
+				local text = tostring( Turn:Get() ) .. "'s turn!"
+				local font = "DermaLarge"
+				draw.SimpleText( text, font, pos.x, pos.y, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+			--else
+			---- TODO temp testing
+			--	Turn.StartTime = CurTime()
+			end
+		end
+
+		-- Ask direction
+		if ( Turn.AskTime ) then
+			local progress = ( CurTime() - Turn.AskTime ) / TURN_ASK_TIME
+				if ( LocalPlayer().AskDir ) then
+					progress = 0.5
+					Turn.AskTime = CurTime() - 0.9
+				end
+			if ( progress >= 0 and progress <= 1 ) then
+				local center = Vector( ScrW() / 2, ScrH() / 8, ScrW() )
+				local xoff = ScrW() / 2
+				local heightoff = 0-- ScrH() / 4
+				local poses = {
+					[0] = center + Vector( -xoff, heightoff, -ScrW() ),
+					[0.1] = center,
+					--[0.5] = center + Vector( 0, math.sin( CurTime() * 5 ) * 8 ),
+					[0.9] = center,
+					[1] = center + Vector( xoff, -heightoff, -ScrW() ),
+				}
+				local pos = AnimateVectorBetween( progress, poses )
+
+				surface.SetDrawColor( COLOUR_WHITE )
+				surface.DrawTexturedRectRotated( pos.x, pos.y, pos.z, 64, 1 )
+				local text = "Which direction?"
+				local font = "DermaLarge"
+				draw.SimpleText( text, font, pos.x, pos.y, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+			end
 		end
 	end )
+end
+
+function AnimateVectorBetween( progress, anim )
+	-- Find last value higher than this
+	local current = GetClosestKeyframe( anim, progress )
+	local target = GetClosestKeyframe( anim, progress, true )
+	local range = target - current
+
+	return LerpVector( ( progress - current ) / range, anim[current], anim[target] )
 end

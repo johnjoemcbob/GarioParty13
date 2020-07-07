@@ -10,7 +10,7 @@ STATE_BOARD = "Board"
 GP13_BOARD_CAMERA_ANGLE = 40
 GP13_BOARD_CAMERA_DISTANCE = 500
 
-local scene
+Board = Board or {}
 
 GM.AddGameState( STATE_BOARD, {
 	OnStart = function( self )
@@ -21,7 +21,7 @@ GM.AddGameState( STATE_BOARD, {
 		Turn:Initialize()
 
 		if ( CLIENT ) then
-			scene = LoadScene( "city.json" )
+			Board.Scene = LoadScene( "city.json" )
 		end
 	end,
 	OnThink = function( self )
@@ -44,8 +44,8 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. STATE_BOARD .. "PostDrawOp
 		render.ClearDepth()
 
 		-- Render background scene
-		--scene = LoadScene( "city.json" )
-		RenderScene( scene, GP13_BOARD_POS + Vector( 2, 3.25, 0 ) * GP13_BOARD_SCALE )
+		--Board.Scene = LoadScene( "city.json" ) -- TODO TEMP TESTING
+		RenderScene( Board.Scene, GP13_BOARD_POS + Vector( 2, 3.25, 0 ) * GP13_BOARD_SCALE )
 
 		-- Render board spaces
 		Board:Render()

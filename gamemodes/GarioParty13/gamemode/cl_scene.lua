@@ -107,20 +107,6 @@ function SaveAnimation( name, tab )
 end
 
 -- Update animation
-local function getclosestkeyframe( part, time, next )
-	local closest = 0
-	for frame, data in SortedPairs( part ) do
-		if ( tonumber( frame ) < time ) then
-			closest = frame
-		elseif ( next ) then
-			closest = frame
-			return closest
-		else
-			return closest
-		end
-	end
-end
-
 hook.Add( "Think", HOOK_PREFIX .. "Animations_Think", function()
 	local anim = LocalPlayer().CurrentAnimation
 	if ( anim and anim.Data ) then
@@ -143,8 +129,8 @@ hook.Add( "Think", HOOK_PREFIX .. "Animations_Think", function()
 					}
 				end
 
-				local currentkeyframe = getclosestkeyframe( part, overallprogress )
-				local nextkeyframe = getclosestkeyframe( part, overallprogress, true )
+				local currentkeyframe = GetClosestKeyframe( part, overallprogress )
+				local nextkeyframe = GetClosestKeyframe( part, overallprogress, true )
 				if ( currentkeyframe != nextkeyframe ) then
 					local progress = ( overallprogress - currentkeyframe ) / ( nextkeyframe - currentkeyframe )
 

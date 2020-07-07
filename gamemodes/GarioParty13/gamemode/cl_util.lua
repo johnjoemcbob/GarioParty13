@@ -224,3 +224,17 @@ function GM.RenderScale( ent, vecscale )
 		mat:Scale( vecscale )
 	ent:EnableMatrix( "RenderMultiply", mat )
 end
+
+function GetClosestKeyframe( frames, time, next )
+	local closest = 0
+	for frame, data in SortedPairs( frames ) do
+		if ( tonumber( frame ) < time ) then
+			closest = frame
+		elseif ( next ) then
+			closest = frame
+			return closest
+		else
+			return closest
+		end
+	end
+end

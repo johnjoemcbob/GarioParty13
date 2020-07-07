@@ -21,6 +21,25 @@ local PILLAR_HEIGHT = 120
 local PILLAR_RADIUS = 30
 
 local WIN_SCORE = 5
+FACE_SIZE = 128 + 64
+
+DROP_SCARY_FACE = "DROP_SCARY_FACE"
+
+local FaceElements = {}
+	FaceElements["eye"] = function( x, y, w, h )
+		surface.SetMaterial( Material_Eye )
+		surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+		surface.DrawTexturedRect( 0, 0, w, h )
+	end
+	FaceElements["mouth"] = function( x, y, w, h )
+		local size = 8
+		local inner = size * 0.75
+		surface.SetDrawColor( COLOUR_BLACK )
+		draw.NoTexture()
+		draw.Circle( x + w / 2, y + h / 2, size, 16, 0 )
+		surface.SetDrawColor( COLOUR_WHITE )
+		draw.Circle( x + w / 2, y + h / 2, inner, 16, 0 )
+	end
 
 -- Resources
 if ( SERVER ) then
@@ -34,6 +53,14 @@ Sound_Boo = Sound( "boo.wav" )
 if ( CLIENT ) then
 	--Material_Mouth = Material( "mouth.png", "noclamp smooth" )
 	Material_Eye = Material( "eye.png", "noclamp smooth" )
+
+	RT_SIZE = 512
+	RT_SCARY_FACE = GetRenderTarget( "rt_scary_face", RT_SIZE, RT_SIZE )
+	MAT_RT_SCARY_FACE = CreateMaterial( "mat_rt_scary_face", "UnlitGeneric", {
+		["$basetexture"] = RT_SCARY_FACE:GetName(),
+		["$translucent"] = 1,
+		["$vertexcolor"] = 1
+	} )
 end
 
 GM.AddGame( NAME, "Default", {
@@ -49,6 +76,139 @@ GM.AddGame( NAME, "Default", {
 		["CHudCrosshair"] = true,
 	},
 	World = {},
+
+	CreateWaitingUI = function( self, parent, w, h )
+		local ren, drop, spawners
+
+		function updateren()
+			LocalPlayer().RenderScaryFace = true
+		end
+		updateren()
+
+		function addspawner( id, size )
+			local index = table.indexOf( table.GetKeys( FaceElements ), id ) - 1
+			local button = vgui.Create( "DButton", spawners )
+				button:SetText( "" )
+				button:SetSize( size, size )
+				button:SetPos( ( index % 2 ) * size, math.floor( index / 2 ) * size )
+				function button:Paint( w, h )
+					FaceElements[id]( 0, 0, w, h )
+					if ( self.Spawner ) then
+						draw.SimpleText( id, "DermaDefault", 0, h, COLOUR_BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_BOTTOM )
+					end
+				end
+				button.ID = id
+				button.Size = size
+				button.Spawner = true
+				button:Droppable( DROP_SCARY_FACE )
+				button:Receiver( DROP_SCARY_FACE, dodropdelete )
+			--spawners:AddItem( button )
+		end
+
+		function dodrop( self, panels, bDoDrop, Command, x, y )
+			for k, v in pairs( panels ) do
+				if ( !v.Pickup ) then
+					if ( v.Spawner ) then
+						v:SetSize( 128, 128 )
+					end
+					v.Pickup = Vector( 1, -1 ) * -( 128 / 2 )
+				end
+				if ( bDoDrop ) then
+					v:SetParent( drop )
+					if ( v.Spawner ) then
+						v.Spawner = false
+						addspawner( v.ID, v.Size )
+					end
+					v:SetPos( x + v.Pickup.x, y - v.Pickup.y )
+					v.Pickup = nil
+
+					updateren()
+				end
+			end
+		end
+
+		function dodropdelete( self, panels, bDoDrop, Command, x, y )
+			for k, v in pairs( panels ) do
+				if ( !v.Pickup ) then
+					if ( v.Spawner ) then
+						v:SetSize( 128, 128 )
+					end
+					v.Pickup = Vector( 1, -1 ) * -( 128 / 2 )
+				end
+				if ( bDoDrop ) then
+					if ( self.Spawner ) then
+						if ( v.Spawner ) then
+							v.Spawner = false
+							addspawner( v.ID, v.Size )
+						end
+						v:Remove()
+
+						updateren()
+					else
+						local offx, offy = self:GetPos()
+						dodrop( drop, { v }, bDoDrop, Command, offx + x, offy + y )
+					end
+				end
+			end
+		end
+
+		-- Create render panel on left
+		-- ren = vgui.Create( "DPanel", parent )
+		-- ren:SetSize( w / 6 * 2, h )
+		-- ren:Dock( LEFT )
+		-- function ren:Paint( w, h )
+		-- 	surface.SetDrawColor( 255, 255, 255, 255 )
+		-- 	surface.SetMaterial( MAT_RT_SCARY_FACE )
+		-- 	surface.DrawTexturedRect( 0, 0, w, h )
+		-- end
+ 
+		-- Create spawners on right
+		local cell = w / 6 / 2
+		spawners = vgui.Create( "DPanel", parent )
+		spawners:SetSize( w / 6, h )
+		spawners:Dock( RIGHT )
+		spawners.Size = cell
+		-- function spawners:Paint( w, h )
+		-- 	surface.SetDrawColor( 255, 0, 0, 255 )
+		-- 	self:DrawFilledRect()
+		-- end
+		spawners.Spawner = true
+		spawners:Receiver( DROP_SCARY_FACE, dodropdelete )
+
+		-- Create drop panel in middle
+		drop = vgui.Create( "DPanel", parent )
+		drop:SetSize( w / 6 * 3, h )
+		drop:Dock( RIGHT )
+		-- function drop:Paint( w, h )
+		-- 	surface.SetDrawColor( 0, 255, 0, 255 )
+		-- 	self:DrawFilledRect()
+		-- end
+		drop:Receiver( DROP_SCARY_FACE, dodrop )
+		self.DropFace = drop
+ 
+		for id, element in pairs( FaceElements ) do
+			addspawner( id, cell )
+		end
+	end,
+	FinishWaitingUI = function( self )
+		-- Get children of the face dropper
+		-- Get their ID and position, and store for game later
+		local face = {}
+		for k, child in pairs( self.DropFace:GetChildren() ) do
+			local w, h = self.DropFace:GetSize()
+			local x, y = child:GetPos()
+				x = x / w
+				y = y / h
+			table.insert( face, { child.ID, Vector( x, y ) } )
+		end
+		--LocalPlayer().ScaryFace = face
+
+		-- Send to server in between and propogate to all other clients
+		MinigameIntro:SendWaitingToServer( face )
+	end,
+	ReceiveWaiting = function( self, ply, tab )
+		ply.ScaryFace = tab
+	end,
 
 	SetupDataTables = function( self )
 		-- Runs on CLIENT and SERVER realms!
@@ -318,12 +478,12 @@ GM.AddGame( NAME, "Default", {
 		end
 
 		-- Draw sheet
-		local attach_id = ply:LookupAttachment('eyes')
-		if not attach_id then return end
+		local attach_id = ply:LookupAttachment( 'eyes' )
+		if ( not attach_id ) then return end
 
-		local attach = ply:GetAttachment(attach_id)
+		local attach = ply:GetAttachment( attach_id )
 
-		if not attach then return end
+		if ( not attach ) then return end
 
 		local pos = attach.Pos + Vector( 0, 0, -40 ) * ply:GetModelScale()
 			if ( !ply.ClientAngle ) then
@@ -353,7 +513,7 @@ GM.AddGame( NAME, "Default", {
 			end
 		end
 		local ang = Angle( ply.ClientAngle.p, ply.ClientAngle.y, ply.ClientAngle.r )
-		
+
 		GAMEMODE.RenderCachedModel( self["MODEL_SHEET"], pos, ang, Vector( 0.7, 0.7, 1.2 ) * ply:GetModelScale(), nil, colour, RENDERGROUP_OPAQUE, function( ent )
 			ent:SetMaterial( "models/debug/debugwhite" )
 		end )
@@ -374,47 +534,87 @@ GM.AddGame( NAME, "Default", {
 			ang:RotateAroundAxis( ang:Right(), 90 )
 			ang:RotateAroundAxis( dir, 90 )
 			cam.Start3D2D( pos, ang, scale )
-				-- Mouth
-				local progress = 1 - ( CurTime() - ply:GetNWFloat( "LastBoo", 0 ) ) * self["MOUTH_SPEED"]
-				local size = 0.2 + math.Clamp( progress, 0, 1 ) * self["MOUTH_OPEN"]
-					if ( ply:GetPos().z <= self["FALL_Z"] or scaredby != ply ) then
-						size = 1.5 + math.sin( CurTime() * 10 ) * 0.3
-						eyesize = 1.2 --+ math.sin( CurTime() * 10 ) * 0.3
-						if ( ply:GetPos().z <= self["FALL_Z"] ) then
-							eyesize = 1.4
+				if ( ply.ScaryFace ) then
+					local scale = 1
+					for i, feature in pairs( ply.ScaryFace ) do
+						local x = ( feature[2].x - 0.5 ) * FACE_SIZE
+							x = x + math.cos( CurTime() + i ) * i * 2
+						local y = ( feature[2].y - 0.5 ) * FACE_SIZE
+							y = y + math.sin( CurTime() + i ) * i * 6
+						if ( feature[1] == "eye" ) then
+							surface.SetMaterial( Material_Eye )
+							surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+							surface.DrawTexturedRectRotated(
+								x,
+								y,
+								self["EYE_SIZE"] * scale, self["EYE_SIZE"] * scale,
+								0
+							)
+						else
+							-- Mouth
+							local progress = 1 - ( CurTime() - ply:GetNWFloat( "LastBoo", 0 ) ) * self["MOUTH_SPEED"]
+							local size = 0.2 + math.Clamp( progress, 0, 1 ) * self["MOUTH_OPEN"]
+								if ( ply:GetPos().z <= self["FALL_Z"] or scaredby != ply ) then
+									size = 1.5 + math.sin( CurTime() * 10 ) * 0.3
+									eyesize = 1.2 --+ math.sin( CurTime() * 10 ) * 0.3
+									if ( ply:GetPos().z <= self["FALL_Z"] ) then
+										eyesize = 1.4
+									end
+								end
+							--local texture = surface.GetTextureID( "decals/smile" )
+							--surface.SetMaterial( Material_Mouth )
+							--surface.DrawTexturedRectRotated( math.cos( CurTime() ) * 16, math.sin( CurTime() ) * 16, size * self["MOUTH_SIZE"], size * self["MOUTH_SIZE"], 0 )
+							local segs = 32
+							local rad = size * self["MOUTH_SIZE"]
+							surface.SetDrawColor( COLOUR_WHITE )
+							draw.NoTexture()
+							draw.Circle( x, y, rad, segs, 0 )
+							surface.SetDrawColor( COLOUR_BLACK )
+							draw.CircleSegment( x, y, rad, segs, 8, 0, 100, false )
 						end
 					end
-				--local texture = surface.GetTextureID( "decals/smile" )
-				--surface.SetMaterial( Material_Mouth )
-				--surface.DrawTexturedRectRotated( math.cos( CurTime() ) * 16, math.sin( CurTime() ) * 16, size * self["MOUTH_SIZE"], size * self["MOUTH_SIZE"], 0 )
-				local segs = 32
-				local x, y = math.cos( CurTime() ) * 16, math.sin( CurTime() ) * 16
-				local rad = size * self["MOUTH_SIZE"]
-				draw.Circle( x, y, rad, segs, 0 )
-				surface.SetDrawColor( Color( 0, 0, 0, 255 ) )
-				draw.CircleSegment( x, y, rad, segs, 8, 0, 100, false )
-
-				-- Two eyes
-				if ( !ply.EyeLerp ) then
-					ply.EyeLerp = {}
-					ply.EyeLerp[-1] = 0
-					ply.EyeLerp[ 1] = 0
-				end
-				local x = 0
-				local y = ply:GetVelocity().z / 4
-				for i = -1, 1, 2 do
-					local speed
-						if ( ( i < 0 and y < 0 ) or ( i > 0 and y > 0 ) ) then
-							speed = 1
-						else
-							speed = -1
+				else
+					-- Mouth
+					local progress = 1 - ( CurTime() - ply:GetNWFloat( "LastBoo", 0 ) ) * self["MOUTH_SPEED"]
+					local size = 0.2 + math.Clamp( progress, 0, 1 ) * self["MOUTH_OPEN"]
+						if ( ply:GetPos().z <= self["FALL_Z"] or scaredby != ply ) then
+							size = 1.5 + math.sin( CurTime() * 10 ) * 0.3
+							eyesize = 1.2 --+ math.sin( CurTime() * 10 ) * 0.3
+							if ( ply:GetPos().z <= self["FALL_Z"] ) then
+								eyesize = 1.4
+							end
 						end
-					ply.EyeLerp[i] = Lerp( FrameTime() * ( 5 + speed ), ply.EyeLerp[i], y )
+					--local texture = surface.GetTextureID( "decals/smile" )
+					--surface.SetMaterial( Material_Mouth )
+					--surface.DrawTexturedRectRotated( math.cos( CurTime() ) * 16, math.sin( CurTime() ) * 16, size * self["MOUTH_SIZE"], size * self["MOUTH_SIZE"], 0 )
+					local segs = 32
+					local x, y = math.cos( CurTime() ) * 16, math.sin( CurTime() ) * 16
+					local rad = size * self["MOUTH_SIZE"]
+					draw.Circle( x, y, rad, segs, 0 )
+					surface.SetDrawColor( Color( 0, 0, 0, 255 ) )
+					draw.CircleSegment( x, y, rad, segs, 8, 0, 100, false )
 
-					local texture = surface.GetTextureID( "decals/eye" )
-					surface.SetMaterial( Material_Eye )
-					surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
-					surface.DrawTexturedRectRotated( i * 64 + math.cos( CurTime() + i ) * i * 4, ply.EyeLerp[i] + -64 + math.sin( CurTime() + i ) * i * 16, self["EYE_SIZE"] *eyesize , self["EYE_SIZE"] * eyesize, 0 )
+					-- Two eyes
+					if ( !ply.EyeLerp ) then
+						ply.EyeLerp = {}
+						ply.EyeLerp[-1] = 0
+						ply.EyeLerp[ 1] = 0
+					end
+					local x = 0
+					local y = ply:GetVelocity().z / 4
+					for i = -1, 1, 2 do
+						local speed
+							if ( ( i < 0 and y < 0 ) or ( i > 0 and y > 0 ) ) then
+								speed = 1
+							else
+								speed = -1
+							end
+						ply.EyeLerp[i] = Lerp( FrameTime() * ( 5 + speed ), ply.EyeLerp[i], y )
+
+						surface.SetMaterial( Material_Eye )
+						surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+						surface.DrawTexturedRectRotated( i * 64 + math.cos( CurTime() + i ) * i * 4, ply.EyeLerp[i] + -64 + math.sin( CurTime() + i ) * i * 16, self["EYE_SIZE"] *eyesize , self["EYE_SIZE"] * eyesize, 0 )
+					end
 				end
 			cam.End3D2D()
 		--end
@@ -461,6 +661,35 @@ GM.AddGame( NAME, "Default", {
 		draw.EllipsesSegment( x, y + size * 1.6, size * 2, size, 128, size, 25, 50, false )
 	end,
 } )
+
+if ( CLIENT ) then
+	hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "Scary_" .. "PostDrawOpaqueRenderables", function()
+		-- if ( LocalPlayer().RenderScaryFace ) then
+		-- 	render.PushRenderTarget( RT_SCARY_FACE )
+		-- 		cam.Start2D()
+		-- 			-- Draw background
+		-- 			surface.SetDrawColor( 0, 100, 0, 255 )
+		-- 			surface.DrawRect( 0, 0, RT_SIZE, RT_SIZE )
+		-- 		cam.End2D()
+		-- 		local ang = EyeAngles()
+		-- 			--ang:RotateAroundAxis( EyeAngles():Up(), 180 )
+		-- 		cam.Start3D(
+		-- 			LocalPlayer():GetPos() + ang:Forward() * 10,
+		-- 			ang, nil, 0, 0, RT_SIZE, RT_SIZE )
+		-- 			GAMEMODE.RenderCachedModel( "models/props_phx/construct/metal_dome360.mdl", LocalPlayer():GetPos(), Angle( 0, 0, 0 ), Vector( 1, 1, 1 ), nil, Color( 255, 0, 0, 255 ), nil, nil, true )
+		-- 			GAMEMODE.Games[NAME]:PostPlayerDraw( LocalPlayer() )
+		-- 		cam.End3D()
+		-- 	render.PopRenderTarget()
+
+		-- 	MAT_RT_SCARY_FACE = CreateMaterial( "mat_rt_scary_face", "UnlitGeneric", {
+		-- 		["$basetexture"] = RT_SCARY_FACE:GetName(),
+		-- 		["$translucent"] = 1,
+		-- 		["$vertexcolor"] = 1
+		-- 	} )
+		-- 	LocalPlayer().RenderScaryFace = false
+		-- end
+	end )
+end
 
 -- Hot reload helper
 if ( GAMEMODE and GAMEMODE.Games[NAME] ) then

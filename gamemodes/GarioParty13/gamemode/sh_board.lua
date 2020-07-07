@@ -51,6 +51,17 @@ local layouts = {
 		{ Vector( -1, 1 ) },
 		{ Vector( 1, 1 ) },
 	},
+	[9] = {
+		{ Vector( 0, 0 ) },
+		{ Vector( 1, 0 ) },
+		{ Vector( 0, -1 ) },
+		{ Vector( 0, 1 ) },
+		{ Vector( -1, -1 ) },
+		{ Vector( 1, -1 ) },
+		{ Vector( -1, 1 ) },
+		{ Vector( 1, 1 ) },
+		{ Vector( -1, 0 ) },
+	},
 }
 
 -- Net
@@ -108,7 +119,7 @@ if ( CLIENT ) then
 					ply.BoardFromPos = ply.BoardTargetPos
 				end
 
-				pos = GP13_BOARD_POS + ply.BoardFromPos * GP13_BOARD_SCALE
+				pos = ply.BoardFromExact
 				local targetpos = Board:GetTargetPos( ply )
 				pos = LerpVector( progress, pos, targetpos )
 				ang = ( targetpos - pos ):Angle()
@@ -147,19 +158,30 @@ if ( CLIENT ) then
 	end )
 
 	function Board:GetTargetPos( ply )
-		local target = ply.BoardTargetPos or Vector( 1, 1 )
+		if ( !ply.BoardTargetPos ) then
+			--ply.BoardTargetPos = Vector( 1, 1 )
+			Board:Move( ply, Vector( 1, 1 ) )
+		end
+
+		local target = ply.BoardTargetPos
 			local count = #self.Data[target.x][target.y].CurrentPlayers
 			local index = table.indexOf( self.Data[target.x][target.y].CurrentPlayers, ply )
-			local layout
-				-- Find closest layout
-				local min = -1
-				for int, lay in pairs( layouts ) do
-					if ( count <= int and ( min == -1 or int < min ) ) then
-						min = int
+		local offset = Vector( 0, 0 )
+			if ( index != -1 ) then
+				local layout
+					-- Find closest layout
+					local min = -1
+					for int, lay in pairs( layouts ) do
+						if ( count <= int and ( min == -1 or int < min ) ) then
+							min = int
+						end
 					end
-				end
-				layout = layouts[min]
-		local offset = layout[index][1]
+					if ( min == -1 ) then
+						min = 1
+					end
+					layout = layouts[min]
+				offset = layout[index][1]
+			end
 		return ( GP13_BOARD_POS + target * GP13_BOARD_SCALE + offset * 32 )
 	end
 
@@ -172,6 +194,7 @@ if ( CLIENT ) then
 		-- Start move
 		self.MoveStart = CurTime()
 		ply.BoardFromPos = ply.BoardTargetPos or Vector( 1, 1 )
+		ply.BoardFromExact = ply.BoardModel:GetPos()
 		ply.BoardTargetPos = pos
 
 		-- Register to new space

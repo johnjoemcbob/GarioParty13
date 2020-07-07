@@ -110,11 +110,11 @@ hook.Add( "Think", HOOK_PREFIX .. "GameStates_Think", function()
 end )
 
 -- Show current state on HUD
-if ( CLIENT ) then
-	hook.Add( "HUDPaint", HOOK_PREFIX .. "GameStates_HUDPaint", function()
-		draw.SimpleText( GAMEMODE:GetStateName(), "DermaDefault", 50, 120, COLOUR_WHITE )
-	end )
-end
+-- if ( CLIENT ) then
+-- 	hook.Add( "HUDPaint", HOOK_PREFIX .. "GameStates_HUDPaint", function()
+-- 		draw.SimpleText( GAMEMODE:GetStateName(), "DermaDefault", 50, 120, COLOUR_WHITE )
+-- 	end )
+-- end
 
 -- Last, after necessary functions are defined
 includeanddownload()
