@@ -8,7 +8,7 @@
 STATE_BOARD = "Board"
 
 GP13_BOARD_CAMERA_ANGLE = 40
-GP13_BOARD_CAMERA_DISTANCE = 500
+GP13_BOARD_CAMERA_DISTANCE = 75
 
 Board = Board or {}
 
@@ -72,10 +72,11 @@ hook.Add( "CalcView", HOOK_PREFIX .. STATE_BOARD .. "_CalcView", function( self,
 					end
 				end
 			end
-			center = center + Vector( minx + ( maxx - minx ) / 2, miny + ( maxy - miny ) / 2 ) * GP13_BOARD_SCALE
+			center = center + Vector( miny + ( maxy - miny ) / 2, minx + ( maxx - minx ) / 2 ) * GP13_BOARD_SCALE
+		local dist = math.max( maxx - minx, maxy - miny )
 		local angles = Angle( GP13_BOARD_CAMERA_ANGLE, 0, 0 )
 		local view = {}
-			view.origin = center + angles:Forward() * -GP13_BOARD_CAMERA_DISTANCE
+			view.origin = center + angles:Forward() * -GP13_BOARD_CAMERA_DISTANCE * dist
 			view.angles = angles
 			view.fov = 90
 			view.drawviewer = true

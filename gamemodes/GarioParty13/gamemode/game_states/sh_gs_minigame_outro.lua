@@ -11,7 +11,10 @@ local HOOK_PREFIX = HOOK_PREFIX .. STATE_MINIGAME_OUTRO .. "_"
 
 MinigameOutro = MinigameOutro or {}
 
-local DURATION = 3
+local DURATION = 5
+local DURATION_UPDATE_PROPS = 0.2
+local TIME_UPDATE_PROPS = 2
+local TIME_UPDATE_PLACINGS = 3
 
 GM.AddGameState( STATE_MINIGAME_OUTRO, {
 	OnStart = function( self )
@@ -20,8 +23,8 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 			MinigameOutro:CreateUI()
 		end
 
-		-- TODO add leave
-		--timer.Simple( DURATION, function() GAMEMODE:SwitchState( STATE_BOARD ) end )
+		-- Leave timer
+		timer.Simple( DURATION, function() GAMEMODE:SwitchState( STATE_BOARD ) end )
 	end,
 	OnThink = function( self )
 		if ( CLIENT ) then
@@ -35,6 +38,10 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 			if ( MinigameOutro.Panel and MinigameOutro.Panel:IsValid() ) then
 				MinigameOutro.Panel:Remove()
 				MinigameOutro.Panel = nil
+			end
+
+			for k, ply in pairs( player.GetAll() ) do
+				ply.LastProps = ply:GetNWInt( "Props", 0 )
 			end
 		end
 	end,
@@ -66,29 +73,24 @@ if ( CLIENT ) then
 		local pad = 0-- ScrH() / 64
 		local h = ScrH() * 0.9
 		local w = ScrW() - ( ScrH() - h )
+		local sloth = h / #player.GetAll() - pad
 		local mid = vgui.Create( "DPanel", self.Panel )
 		mid:SetSize( w, h )
 		mid:Center()
 		mid:DockPadding( pad, pad, pad, pad )
 		function mid:Paint( w, h )
+			for k, ply in pairs( player.GetAll() ) do
+				MinigameOutro:RenderPlayerPanel( ply, w, sloth )
+			end
 		end
 		self.SlotParent = mid
 		--mid:SlideDown( 1 )
 
-		local mid = vgui.Create( "DPanel", self.Panel )
-		mid:SetSize( w, h )
-		mid:Center()
-		mid:DockPadding( pad, pad, pad, pad )
-		function mid:Paint( w, h )
-		end
-		self.AnimParent = mid
-
 		-- List of slots for players to fill
 		self.Slots = {}
-		local h = h / #player.GetAll() - pad
 		for k, v in pairs( player.GetAll() ) do
 			local slot = vgui.Create( "DPanel", self.SlotParent )
-				slot:SetSize( w, h )
+				slot:SetSize( w, sloth )
 				slot:Dock( TOP )
 				function slot:Paint( w, h )
 				end
@@ -96,137 +98,127 @@ if ( CLIENT ) then
 		end
 
 		-- Create the player panels
-		local order = {
-			-10,
-			-20,
-			5
-		}
 		for k, ply in pairs( player.GetAll() ) do
-			-- TODO TEMP REMOVE
-			--ply:SetNWInt( "Props", math.random( -10, 10 ) )
-			ply:SetNWInt( "Props", order[k] )
-
-			ply.OutroPanel = self:CreatePlayerPanel( ply, w, h )
-
-			-- TODO TEMP REMOVE
-			self:SetPlayerSlot( ply, k )
+			ply.LastProps = ply.LastProps or 0
+			ply.OutroPanel = {}
+		end
+		self:Reorder( true )
+		-- Start positions
+		for k, ply in pairs( player.GetAll() ) do
 			self:FinishPlayerLerp( ply )
 		end
 
-		-- TODO TEMP random reorder parent each player to their slot
-		self:Reorder()
+		-- Begin reordering process with timers
+		timer.Simple( TIME_UPDATE_PROPS, function()
+			for k, ply in pairs( player.GetAll() ) do
+				ply.OutroPanel.StartNumberTime = CurTime()
+			end
+		end )
+		timer.Simple( TIME_UPDATE_PLACINGS, function()
+			self:Reorder()
+		end)
 
 		self:CreateUIOverlay()
 	end
 
-	function MinigameOutro:CreatePlayerPanel( ply, w, h )
-		local pad = ScrH() / 16
-		local panel = vgui.Create( "DPanel" )
-			panel:SetSize( w, h )
-			panel:Dock( TOP )
-			panel:DockPadding( pad, pad, pad, pad )
-			function panel:AnimationThink()
-				if ( self.StartLerpTime and self.Target ) then
-					-- TODO
-					-- TODO
-					-- TODO
-					-- Lerp here
-					local progress = math.Clamp( CurTime() - self.StartLerpTime, 0, 1 )
-					local target = Vector( MinigameOutro.Slots[self.Target]:GetPos() )
-					local current = Vector( MinigameOutro.Slots[self.Current]:GetPos() )
-					print( ply, current, target )
-					current = LerpVector( progress, current, target )
-					print( progress, current )
-					print( self:GetPos() )
-					self:SetPos( current.x, current.y )
-					print( self:GetPos() )
-					if ( progress >= 1 or self.Target == self.Current ) then
-						MinigameOutro:FinishPlayerLerp( ply )
-					end
-					print( " " )
-					--self:MoveToFront()
+	function MinigameOutro:RenderPlayerPanel( ply, w, h )
+		local border = 32
+		local size = 1
+		local outsize = 0.95
+		local margin = 8
+		local spacing = 8
+		local out = 32
+
+		-- Get current pos by lerping to target
+		local placing = ply.OutroPanel.Current
+		local progress = 0
+			if ( ply.OutroPanel.StartLerpTime ) then
+				progress = math.Clamp( CurTime() - ply.OutroPanel.StartLerpTime, 0, 1 )
+			end
+		local currenty = h * ( ply.OutroPanel.Current - 1 )
+		local currentx = 0
+		local x, y = currentx, currenty
+			if ( ply.OutroPanel.Target and ply.OutroPanel.Target != ply.OutroPanel.Current ) then
+				local targetx = 0
+				local targety = h * ( ply.OutroPanel.Target - 1 )
+
+				-- Half way out
+				local sign = 1
+				if ( targety < currenty ) then
+					sign = -1
+				end
+				if ( progress <= 0.5 ) then
+					targetx = out * sign
+					size = Lerp( progress * 2, size, outsize )
+				else
+					currentx = out * sign
+					size = Lerp( ( progress - 0.5 ) * 2, outsize, size )
+					placing = ply.OutroPanel.Target
+				end
+
+				-- Lerp
+				x = Lerp( progress, currentx, targetx )
+				y = Lerp( progress, currenty, targety )
+			end
+		local w, h = w * size, h * size
+		local off = ScrH() * 0.7 * ( 1 - size )
+		local x, y = x + off, y + off
+
+		-- Render white background box
+		surface.SetDrawColor( COLOUR_WHITE )
+		surface.DrawRect( x, y + margin / 2, w, h - margin )
+
+		-- Render placing in top left
+		draw.SimpleText( GetPlacingString( placing ), "MinigameTitle", x + border / 2, y + border / 2, GetPlacingColour( placing ), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
+
+		-- Render player name at left
+		draw.SimpleText( tostring( ply ), "DermaLarge", x + border, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+
+		-- Render current props score at right
+		local progress = 0
+		local props = ply.LastProps
+			if ( ply.OutroPanel.StartNumberTime ) then
+				progress = math.Clamp( ( CurTime() - ply.OutroPanel.StartNumberTime ) / DURATION_UPDATE_PROPS, 0, 1 )
+				if ( progress >= 1 ) then
+					props = ply:GetNWInt( "Props", 0 )
 				end
 			end
-		local label = vgui.Create( "DLabel", panel )
-			label:SetText( tostring( ply ) )
-			label:SetFont( "DermaLarge" )
-			label:SetTextColor( COLOUR_BLACK )
-			label:SizeToContents()
-			label:Dock( LEFT )
-		local label = vgui.Create( "DLabel", panel )
-			local str = tostring( ply:GetNWInt( "Props", 0 ) )
-			label:SetText( str .. " Props" )
-			label:SetFont( "DermaLarge" )
-			label:SetTextColor( COLOUR_BLACK )
-			label:SizeToContents()
-			label:Dock( RIGHT )
-		local image = vgui.Create( "DModelPanel", panel )
-			image:SetModel( "models/props_junk/TrafficCone001a.mdl" )
-			image:SetCamPos( Vector( 20, 20, -2 ) )
-			image:SetLookAng( Angle( 0, 180 + 30, 10 ) )
-			function image:LayoutEntity( ent )
+		local textx = x + w - border
+		local width = draw.SimpleText( props .. " Props!", "DermaLarge", textx, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+		local colour = COLOUR_NEGATIVE
+		local add = ply:GetNWInt( "Props", 0 ) - ply.LastProps
+		if ( progress < 1 and add != 0 ) then
+			if ( add > 0 ) then
+				add = "+" .. add
+				colour = COLOUR_POSITIVE
 			end
-			image:Dock( RIGHT )
-			local w, h = image:GetSize()
-			image:SetSize( w, w )
-			-- function image:Paint( w, h )
-
-			-- end
-		return panel
+			draw.SimpleText( add, "MinigameTitle", textx - ( width + spacing ) * ( 1 - progress * 0.2 ), y + h / 2, colour, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+		end
 	end
 
-	function MinigameOutro:Reorder()
+	function MinigameOutro:Reorder( last )
 		-- Get a list of key: ply, value: props - to be ordered below
 		local order = {}
 		for k, ply in pairs( player.GetAll() ) do
 			order[ply] = ply:GetNWInt( "Props", 0 )
+			if ( last ) then
+				order[ply] = ply.LastProps or 0
+			end
 		end
 
-		-- Reorder
-		timer.Simple( 1, function()
-			local slot = 1
-			for ply, props in SortedPairsByValue( order, true ) do
-				self:SetPlayerSlot( ply, slot, true )
-				slot = slot + 1
-			end
-		end)
+		local slot = 1
+		for ply, props in SortedPairsByValue( order, true ) do
+			self:SetPlayerSlot( ply, slot, true )
+			slot = slot + 1
+		end
 	end
 
 	function MinigameOutro:SetPlayerSlot( ply, slot, lerp )
-		print( "hi" )
 		ply.OutroPanel.Target = slot
 		ply.OutroPanel.StartLerpTime = CurTime()
-
-		ply.OutroPanel:SetParent( self.AnimParent )
-
-		-- Start lerp towards
-		-- if ( lerp ) then
-		-- 	print( slot )
-		-- 	print( ply )
-		-- 	--ply.OutroPanel:SetParent( self.SlotParent )
-		-- 	local x, y = self.Slots[slot]:GetPos()
-		-- 	local w, h = self.Slots[slot]:GetSize()
-		-- 	local cx, cy = self.Slots[ply.OutroPanel.Current]:GetPos()
-		-- 	--ply.OutroPanel:SetPos( cx, cy )
-		-- 	print( cx, cy )
-		-- 	print( x, y )
-		-- 	-- timer.Simple( 0.5, function()
-		-- 	-- 	ply.OutroPanel:SetPos( cx, cy )
-		-- 	-- end )
-		-- 	timer.Simple( 1, function()
-		-- 		--ply.OutroPanel:MoveTo( 0, cy, 1, 0, 0 )
-		-- 		local y = y - cy
-		-- 		-- ply.OutroPanel:MoveBy( 0, y, 1, 0, -1, function()
-		-- 		-- 	self:FinishPlayerLerp( ply )
-		-- 		-- end )
-		-- 	end )
-		-- 	-- ply.OutroPanel:SetAnimationEnabled( true )
-		-- end
 	end
 
 	function MinigameOutro:FinishPlayerLerp( ply )
-		ply.OutroPanel:SetParent( MinigameOutro.Slots[ply.OutroPanel.Target] )
-
 		ply.OutroPanel.Current = ply.OutroPanel.Target
 		ply.OutroPanel.Target = nil
 	end

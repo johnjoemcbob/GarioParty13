@@ -211,7 +211,7 @@ if ( SERVER ) then
 
 	function meta_ply:TrySpawn( point )
 		local valid = true
-			for k, ent in pairs( ents.FindInSphere( point, 10 ) ) do
+			for k, ent in pairs( ents.FindInSphere( point, 20 ) ) do
 				if ( ent:IsPlayer() ) then
 					valid = false
 					break

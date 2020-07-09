@@ -89,9 +89,9 @@ function Dice:Roll( ply )
 	end
 end
 
-function Dice:Hit()
+function Dice:Hit( overwrite )
 	-- TODO, stop rolling
-	local result = math.random( 1, 6 )
+	local result = overwrite or math.random( 1, 6 )
 	self.Result = result
 
 	-- Communicate result to all

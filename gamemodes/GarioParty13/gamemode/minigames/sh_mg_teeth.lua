@@ -79,6 +79,13 @@ GM.AddGame( "Teeth", "Default", {
 			ply.BackgroundData.Highlight = GetColourHighlight( ply.BackgroundData.Colour )
 			GAMEMODE.Backgrounds[ply.Background].Init( ply.BackgroundData )
 		end
+
+		-- TODO TEMP REMOVE
+		timer.Simple( math.random( 3, 6 ), function()
+			if ( ply:GetGameName() == "Teeth" ) then
+				self:Win( ply )
+			end
+		end )
 	end,
 	PlayerSpawn = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -218,6 +225,7 @@ GM.AddGame( "Teeth", "Default", {
 		-- ply
 
 		if ( CLIENT ) then
+			self:CloseMouth()
 			self:RemoveRagdoll()
 
 			gui.EnableScreenClicker( false )
@@ -363,8 +371,10 @@ GM.AddGame( "Teeth", "Default", {
 	end,
 	CloseMouth = function( self )
 		-- Stop intro and loop sounds
-		self.PatientRagdoll:StopSound( Sound_AAA_In )
-		self.PatientRagdoll:StopSound( Sound_AAA_Loop )
+		if ( self.PatientRagdoll and self.PatientRagdoll:IsValid() ) then
+			self.PatientRagdoll:StopSound( Sound_AAA_In )
+			self.PatientRagdoll:StopSound( Sound_AAA_Loop )
+		end
 	end,
 	InitGunk = function( self )
 		self.Gunks = {}

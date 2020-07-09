@@ -47,9 +47,13 @@ end
 
 GM.AddGameState( STATE_MINIGAME_INTRO, {
 	OnStart = function( self )
-		-- TODO TEMP
-		self.Minigame = "Scary Game"
-		self.Minigame = "Teeth"
+		-- Find a random minigame
+		if ( SERVER ) then
+			local games = table.GetKeys( GAMEMODE.Games ) -- TODO TEMP USE THIS WHEN ALL IMPLEMENTED
+			local games = { "Scary Game", "Teeth" }
+			self.Minigame = games[math.random( 1, #games )]
+			MinigameIntro:BroadcastMinigame( self.Minigame )
+		end
 
 		-- Init columns of readiness
 		if ( CLIENT ) then
@@ -104,11 +108,13 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 
 -- Net
 local NETSTRING = HOOK_PREFIX .. "Net_"
+local NETSTRING_MINIGAME = HOOK_PREFIX .. "Net_Minigame"
 local NETSTRING_WAITING_CUSTOM = HOOK_PREFIX .. "Net_Waiting"
 local NETSTRING_WAITING_BROADCAST = HOOK_PREFIX .. "Net_Waiting_Broadcast"
 local NET_INT = 3
 if ( SERVER ) then
 	util.AddNetworkString( NETSTRING )
+	util.AddNetworkString( NETSTRING_MINIGAME )
 	util.AddNetworkString( NETSTRING_WAITING_CUSTOM )
 	util.AddNetworkString( NETSTRING_WAITING_BROADCAST )
 
@@ -117,6 +123,13 @@ if ( SERVER ) then
 		net.Start( NETSTRING )
 			net.WriteEntity( ply )
 			net.WriteInt( ready, NET_INT )
+		net.Broadcast()
+	end
+
+	function MinigameIntro:BroadcastMinigame( minigame )
+		-- Communicate to all clients
+		net.Start( NETSTRING_MINIGAME )
+			net.WriteString( minigame )
 		net.Broadcast()
 	end
 
@@ -129,6 +142,7 @@ if ( SERVER ) then
 		-- Communicate to all clients
 		net.Start( NETSTRING_WAITING_BROADCAST )
 			net.WriteEntity( ply )
+			net.WriteString( GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame )
 			net.WriteTable( tab )
 		net.Broadcast()
 	end
@@ -141,6 +155,12 @@ if ( CLIENT ) then
 		MinigameIntro:SetReady( ply, ready )
 	end )
 
+	net.Receive( NETSTRING_MINIGAME, function( lngth )
+		local minigame = net.ReadString()
+
+		GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame = minigame
+	end )
+
 	function MinigameIntro:SendWaitingToServer( tab )
 		-- Send customised waiting stuff to server
 		net.Start( NETSTRING_WAITING_CUSTOM )
@@ -150,11 +170,12 @@ if ( CLIENT ) then
 
 	net.Receive( NETSTRING_WAITING_BROADCAST, function( lngth )
 		local ply = net.ReadEntity()
+		local game = net.ReadString()
 		local tab = net.ReadTable()
 
 		-- Look up minigame receive
-		if ( GAMEMODE.Games[ply:GetGameName()].ReceiveWaiting ) then
-			GAMEMODE.Games[ply:GetGameName()]:ReceiveWaiting( ply, tab )
+		if ( GAMEMODE.Games[game].ReceiveWaiting ) then
+			GAMEMODE.Games[game]:ReceiveWaiting( ply, tab )
 		end
 	end )
 end
@@ -166,7 +187,7 @@ function MinigameIntro:MoveReady( ply, dir )
 		local old = self.Ready[ply]
 		self:SetReady( ply, math.Clamp( old + dir, READY_NONE, READY_PRACTICE ) )
 
-		-- TEMP TODO voting
+		-- Voting
 		local start = true
 			for k, v in pairs( player.GetAll() ) do
 				if ( self.Ready[v] != READY_REAL ) then
@@ -175,6 +196,7 @@ function MinigameIntro:MoveReady( ply, dir )
 				end
 			end
 		if ( start ) then
+			GAMEMODE.GameStates[STATE_MINIGAME].Minigame = GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame
 			GAMEMODE:SwitchState( STATE_MINIGAME )
 		end
 

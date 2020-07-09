@@ -170,6 +170,27 @@ function GetPrettyAngle( angle )
 	return "Angle( " .. math.Round( angle.p ) .. ", " .. math.Round( angle.y ) .. ", " .. math.Round( angle.r ) .. " )"
 end
 
+function GetPlacingString( int )
+	local placing = {
+		"1st",
+		"2nd",
+		"3rd",
+	}
+	if ( placing[int] ) then
+		return placing[int]
+	else
+		return int .. "th"
+	end
+end
+
+function GetPlacingColour( int )
+	if ( COLOUR_PLACING[int] ) then
+		return COLOUR_PLACING[int]
+	else
+		return COLOUR_BLACK
+	end
+end
+
 function Get2DDirection( angle )
 	return Vector( math.cos( angle ), math.sin( angle ) )
 end

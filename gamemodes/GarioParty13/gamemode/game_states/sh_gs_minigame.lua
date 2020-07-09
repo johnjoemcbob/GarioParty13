@@ -10,7 +10,7 @@ STATE_MINIGAME = "Minigame"
 GM.AddGameState( STATE_MINIGAME, {
 	OnStart = function( self )
 		for k, v in pairs( player.GetAll() ) do
-			v:SetGame( "Scary Game" )
+			v:SetGame( self.Minigame )
 		end
 	end,
 	OnThink = function( self )

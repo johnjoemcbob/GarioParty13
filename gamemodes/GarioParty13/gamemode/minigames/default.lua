@@ -78,6 +78,7 @@ GM.AddGame( "Default", "", {
 	end,
 	Win = function( self, ply )
 		ply.WonLastGame = true
+		ply:SetNWInt( "Props", ply:GetNWInt( "Props", 0 ) + 5 )
 		self:Finish()
 	end,
 	-- Custom functions: Constants

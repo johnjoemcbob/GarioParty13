@@ -37,6 +37,13 @@ COLOUR_UI_BACKGROUND_TRANS		= Color( 255, 255, 255, 50 )
 COLOUR_UI_TEXT_DARK				= Color( 80, 80, 80, 255 )
 COLOUR_UI_TEXT_MED				= Color( 160, 160, 160, 255 )
 COLOUR_UI_TEXT_LIGHT			= Color( 220, 220, 220, 255 )
+COLOUR_POSITIVE					= Color( 50, 200, 50, 255 )
+COLOUR_NEGATIVE					= Color( 200, 50, 50, 255 )
+COLOUR_PLACING					= {
+	Color( 200, 200, 50, 255 ),
+	Color( 150, 150, 150, 255 ),
+	Color( 150, 50, 50, 255 ),
+}
 GM.ColourPalette				= {
 	Color( 0, 184, 148, 255 ),
 	Color( 255, 159, 243, 255 ),

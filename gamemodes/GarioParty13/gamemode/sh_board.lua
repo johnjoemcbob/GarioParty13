@@ -9,7 +9,8 @@ local HOOK_PREFIX = HOOK_PREFIX .. "Board_"
 
 GP13_BOARD_SCALE		= 100
 GP13_BOARD_POS			= Vector( 0, 0, 0 )
-GP13_BOARD_SPACE_MODEL	= "models/hunter/blocks/cube1x1x025.mdl"
+GP13_BOARD_SPACE_MODEL	= "models/hunter/misc/roundthing2.mdl"
+GP13_BOARD_SPACE_LINE	= "models/hunter/blocks/cube025x05x025.mdl"
 
 BOARD_MOVETIME 	= 1
 
@@ -17,28 +18,114 @@ SPACE_TYPE_DEFAULT	= 0
 SPACE_TYPE_NEGATIVE	= 1
 
 Board = Board or {}
+local LastSpaceAdded = nil
+local spaces = 0
 local function setupboard()
 	Board.Data = {}
-	Board:AddSpace( 1, 1, SPACE_TYPE_DEFAULT, { Vector( 2, 2 ) } )
-	Board:AddSpace( 2, 2, SPACE_TYPE_DEFAULT, { Vector( 2, 3 ) } )
-	Board:AddSpace( 2, 3, SPACE_TYPE_DEFAULT, { Vector( 2, 4 ), Vector( 0, 3 ) } )
-	Board:AddSpace( 2, 4, SPACE_TYPE_DEFAULT, { Vector( 1, 1 ) } )
-	Board:AddSpace( 0, 3, SPACE_TYPE_DEFAULT, { Vector( 1, 1 ) } )
+	Board:AddSpace( 1, 1, SPACE_TYPE_DEFAULT )
+		Board:AddSpaceFromLast( 1, 1, SPACE_TYPE_DEFAULT )
+		Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
+		Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
+		Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
+		-- First corner
+		local path = Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT,
+			{ Vector( 1, 0 ), Vector( 0, 1 ) } )
+		Board:StartDownPath( path )
+			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
+			-- Left of map
+			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+			local path_left = Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT,
+				{ Vector( 0, 1 ), Vector( -1, 0 ) } )
+			-- Left of map
+			Board:StartDownPath( path_left )
+				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+					-- Row 3
+					Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+					Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+					Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+					Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+					-- Back to Row 2
+					Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
+					Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
+					Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
+					Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
+			-- Row 2
+			Board:StartDownPath( path_left )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				-- Back to start
+				Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
+		Board:StartDownPath( path )
+			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+ 
+	-- PrintTable( Board.Data )
+	-- print( spaces )
+end
+
+function Board:StartDownPath( pos )
+	LastSpaceAdded = pos
+end
+
+function Board:AddSpaceFromLast( x, y, type, connections )
+	if ( connections ) then
+		for k, con in pairs( connections ) do
+			connections[k] = con + LastSpaceAdded + Vector( x, y )
+		end
+	end
+
+	local current = LastSpaceAdded + Vector( x, y )
+	table.Add( Board.Data[LastSpaceAdded.x][LastSpaceAdded.y].Connections, { current } )
+
+	self:AddSpace( current.x, current.y, type, connections )
+
+	return LastSpaceAdded
 end
 
 -- Connections are one way by default
 function Board:AddSpace( x, y, type, connections )
+	if ( !connections ) then
+		connections = {}
+	end
+
 	Board.Data = Board.Data or {}
 	Board.Data[x] = Board.Data[x] or {}
-	Board.Data[x][y] = {}
-	Board.Data[x][y].Type = type
-	Board.Data[x][y].Connections = connections
+	if ( !Board.Data[x][y] ) then
+		Board.Data[x][y] = {}
+		Board.Data[x][y].Type = type
+		Board.Data[x][y].Connections = connections
+		spaces = spaces + 1
+	else
+		table.Add( Board.Data[x][y].Connections, connections )
+	end
+
 	Board.Data[x][y].CurrentPlayers = {}
 		for k, ply in pairs( player.GetAll() ) do
-			if ( ply:GetNWVector( "BoardPos", Vector( 1 , 1 ) ) == Vector( x, y ) ) then
+			if ( ply:GetNWVector( "BoardPos", Vector( 1, 1 ) ) == Vector( x, y ) ) then
 				table.insert( Board.Data[x][y].CurrentPlayers, ply )
 			end
 		end
+
+	LastSpaceAdded = Vector( x, y )
 end
 
 local layouts = {
@@ -182,7 +269,7 @@ if ( CLIENT ) then
 					layout = layouts[min]
 				offset = layout[index][1]
 			end
-		return ( GP13_BOARD_POS + target * GP13_BOARD_SCALE + offset * 32 )
+		return ( GP13_BOARD_POS + Vector( target.y, target.x ) * GP13_BOARD_SCALE + offset * 32 )
 	end
 
 	function Board:Move( ply, pos )
@@ -204,15 +291,26 @@ if ( CLIENT ) then
 	function Board:Render()
 		for x, ys in pairs( Board.Data ) do
 			for y, space in pairs( ys ) do
-				local pos = GP13_BOARD_POS + Vector( x, y ) * GP13_BOARD_SCALE
+				local pos = GP13_BOARD_POS + Vector( y, x ) * GP13_BOARD_SCALE
 				local ang = Angle( 0, 0, 0 )
-				local sca = Vector( 1, 1, 1 )
-				local mat = nil
+				local sca = Vector( 1, 0.4, 0.1 )
+				local mat = "models/debug/debugwhite"
 				local col = COLOUR_WHITE
 
 				for k, conn in pairs( space.Connections ) do
-					local endpos = GP13_BOARD_POS + Vector( conn.x, conn.y ) * GP13_BOARD_SCALE
-					render.DrawLine( pos, endpos, Color( 255, 255, 0, 255 ) )
+					local endpos = GP13_BOARD_POS + Vector( conn.y, conn.x ) * GP13_BOARD_SCALE
+					--render.DrawLine( pos, endpos, Color( 255, 255, 0, 255 ) )
+					local length = pos:Distance( endpos ) / GP13_BOARD_SCALE * 2.5
+					local mid = ( endpos - pos ) / 2
+						mid.z = 0
+					local ang = mid:Angle() + Angle( 0, 90, 0 )
+						mid = mid + ang:Forward() * 6
+					local sca = Vector( 1, length, 0.1 )
+					GAMEMODE.RenderCachedModel(
+						GP13_BOARD_SPACE_LINE,
+						pos + mid, ang, sca,
+						mat, GAMEMODE.ColourPalette[5]
+					)
 				end
 
 				GAMEMODE.RenderCachedModel(
