@@ -12,7 +12,7 @@ GP13_BOARD_POS			= Vector( 0, 0, 0 )
 GP13_BOARD_SPACE_MODEL	= "models/hunter/misc/roundthing2.mdl"
 GP13_BOARD_SPACE_LINE	= "models/hunter/blocks/cube025x05x025.mdl"
 
-BOARD_MOVETIME 	= 1
+BOARD_MOVETIME 	= 0.2
 
 SPACE_TYPE_DEFAULT	= 0
 SPACE_TYPE_NEGATIVE	= 1

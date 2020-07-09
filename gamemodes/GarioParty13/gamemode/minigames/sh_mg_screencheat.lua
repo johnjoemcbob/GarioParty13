@@ -9,13 +9,25 @@ local BOUNDS = {
 	Vector( -3272, -4552, -256 ),
 	Vector( -824, -2648, -256 ),
 }
+local MODEL_WALL = "models/hunter/plates/plate8x8.mdl"
 
-GM.AddGame( "Screencheat", "", {
+local ang = Angle( 90, 90, 0 )
+local col = GM.ColourPalette[5]
+local WALLS = {
+	{ Vector( -1352, -2630, -256 ), ang, col },
+	{ Vector( -2804, -2630, -256 ), ang, col },
+}
+
+GM.AddGame( "Screencheat", "Default", {
 	Author = "johnjoemcbob",
 	Colour = Color( 150, 150, 255, 255 ),
-	Instructions = "You can't see the other players!\nWatch their screens to figure out where they are...\nKill them to get points!",
+	TagLine = "Watch each other's screens!",
+	Instructions = "You can't see the other players!\nWatch their screens to figure out where they are...",
+	Controls = "Left click to shoot",
+	GIF = "https://i.imgur.com/Y7OIMM7.gif",
 	HideLabels = true,
 	HideDefaultHUD = true,
+	World = {},
 
 	Init = function( self )
 		-- Runs on CLIENT and SERVER realms!
@@ -33,6 +45,12 @@ GM.AddGame( "Screencheat", "", {
 
 		-- Ensure walls are painted (if it fails due to server starup)
 		self:Init()
+
+		-- When each player joins, but should all be aroundabout at one time so should be fine??
+		if ( SERVER ) then
+			self:RemoveWorld()
+			self:AddWorld()
+		end
 
 		if ( CLIENT ) then
 			ply.exampleRT = GetRenderTarget( "example_rt", ScrW(), ScrH() )
@@ -86,6 +104,10 @@ GM.AddGame( "Screencheat", "", {
 
 		if ( attacker:IsValid() and attacker:IsPlayer() ) then
 			attacker:SetNWInt( "Score", attacker:GetNWInt( "Score", 0 ) + 1 )
+
+			if ( attacker:GetNWInt( "Score", 0 ) >= 5 ) then
+				self:Win( attacker )
+			end
 
 			GAMEMODE.EmitChainPitchedSound(
 				"FlyHigh",
@@ -149,7 +171,7 @@ GM.AddGame( "Screencheat", "", {
 							angles = ply:EyeAngles(),
 							x = 0, y = 0,
 							w = ScrW(), h = ScrH(),
-							fov = 70,
+							fov = 90,
 							drawviewmodel = false,
 						} )
 
@@ -241,6 +263,25 @@ GM.AddGame( "Screencheat", "", {
 	end,
 
 	-- Custom functions
+	AddWorld = function( self )
+		-- Walls
+		for k, wall in pairs( WALLS ) do
+			local ent = GAMEMODE.CreateProp( MODEL_WALL, wall[1], wall[2], false )
+				ent:SetMaterial( "models/debug/debugwhite" )
+				ent:SetColor( wall[3] )
+				--GAMEMODE.ScaleEnt( ent, wall[3], false )
+			table.insert( self.World, ent )
+		end
+	end,
+	RemoveWorld = function( self )
+		if ( self.World ) then
+			for k, ent in pairs( self.World ) do
+				if ( ent:IsValid() ) then
+					ent:Remove()
+				end
+			end
+		end
+	end,
 	CheatHUDPaint = function( self, ply, quad )
 		-- Draw player name bottom center
 		local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]

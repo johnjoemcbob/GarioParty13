@@ -50,7 +50,11 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 		-- Find a random minigame
 		if ( SERVER ) then
 			local games = table.GetKeys( GAMEMODE.Games ) -- TODO TEMP USE THIS WHEN ALL IMPLEMENTED
-			local games = { "Scary Game", "Teeth" }
+			local games = {
+				"Scary Game",
+				--"Teeth",
+				--"Screencheat",
+			}
 			self.Minigame = games[math.random( 1, #games )]
 			MinigameIntro:BroadcastMinigame( self.Minigame )
 		end
@@ -467,7 +471,7 @@ if ( CLIENT ) then
 	if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
 		MinigameIntro.Panel:Remove()
 		MinigameIntro.Panel = nil
-		MinigameIntro:CreateMinigameIntroUI( "Teeth" )
+		MinigameIntro:CreateMinigameIntroUI( "Scary Game" )
 		MinigameIntro.Panel:MakePopup()
 		MinigameIntro.Panel:MoveToBack()
 		MinigameIntro.Panel:SetKeyboardInputEnabled( false )

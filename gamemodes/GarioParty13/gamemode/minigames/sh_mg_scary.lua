@@ -44,6 +44,9 @@ local FaceElements = {}
 -- Resources
 if ( SERVER ) then
 	resource.AddFile( "materials/eye.png" )
+	resource.AddFile( "materials/eyes/eye_bored.png" )
+	resource.AddFile( "materials/eyes/eye_verymad.png" )
+	resource.AddFile( "materials/eyes/eye_scared.png" )
 	resource.AddFile( "sound/boo.wav" )
 	resource.AddFile( "sound/scared.wav" )
 	resource.AddFile( "sound/fall.wav" )
@@ -53,6 +56,27 @@ Sound_Boo = Sound( "boo.wav" )
 if ( CLIENT ) then
 	--Material_Mouth = Material( "mouth.png", "noclamp smooth" )
 	Material_Eye = Material( "eye.png", "noclamp smooth" )
+	Material_Eyes = {
+		Material( "eyes/eye_scared.png", "noclamp smooth" ),
+		Material( "eyes/eye_verymad.png", "noclamp smooth" ),
+		Material( "eyes/eye_bored.png", "noclamp smooth" ),
+	}
+
+	-- TODO clean these up to all be in the same place
+	for k, eye in pairs( Material_Eyes ) do
+		if ( eye != tonumber( eye ) ) then -- TODO WTF?
+			FaceElements["eye" .. k] = function( x, y, w, h )
+				surface.SetMaterial( eye )
+				surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+				surface.DrawTexturedRect(
+					0, 0,
+					w, h,
+					0, 0,
+					1, 1
+				)
+			end
+		end
+	end
 
 	RT_SIZE = 512
 	RT_SCARY_FACE = GetRenderTarget( "rt_scary_face", RT_SIZE, RT_SIZE )
@@ -351,7 +375,7 @@ GM.AddGame( NAME, "Default", {
 					local new = scare:GetNWInt( "Score", 0 ) + 1
 					scare:SetNWInt( "Score", new )
 					if ( new >= WIN_SCORE ) then
-						self:Win( ply )
+						self:Win( scare )
 					end
 				else
 					ply:SetNWInt( "Score", ply:GetNWInt( "Score", 0 ) - 1 )
@@ -588,6 +612,32 @@ GM.AddGame( NAME, "Default", {
 								self["EYE_SIZE"] * scale, self["EYE_SIZE"] * scale,
 								0
 							)
+						elseif ( string.find( feature[1], "eye" ) ) then
+							-- TODO too much duplication here!
+							local index = tonumber( string.Replace( feature[1], "eye", "" ) )
+							local mat = Material_Eyes[index]
+							local u1 = 0
+								if ( ( feature[2].x - 0.5 ) < 0 ) then
+									u1 = 1
+								end
+							local u2 = 1 - u1
+							local size = self["EYE_SIZE"] * scale
+							surface.SetMaterial( mat )
+							surface.SetDrawColor( Color( 255, 255, 255, 255 ) )
+							surface.DrawTexturedRectUV(
+								x - size / 2,
+								y - size / 2,
+								size, size,
+								u1, 0,
+								u2, 1
+							)
+
+							-- Draw pupil
+							local rad = 16
+							local segs = 32
+							surface.SetDrawColor( COLOUR_BLACK )
+							draw.NoTexture()
+							draw.Circle( x, y, rad, segs, 8 )
 						else
 							-- Mouth
 							local progress = 1 - ( CurTime() - ply:GetNWFloat( "LastBoo", 0 ) ) * self["MOUTH_SPEED"]
@@ -673,7 +723,7 @@ GM.AddGame( NAME, "Default", {
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
 	end,
-	
+
 	-- Custom functions
 	AddWorld = function( self )
 		-- Pillars
