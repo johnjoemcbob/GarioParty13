@@ -49,6 +49,7 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 	OnStart = function( self )
 		-- TODO TEMP
 		self.Minigame = "Scary Game"
+		self.Minigame = "Teeth"
 
 		-- Init columns of readiness
 		if ( CLIENT ) then
@@ -253,18 +254,8 @@ if ( CLIENT ) then
 			GAMEMODE.Backgrounds[MinigameIntro.Panel.Background].Init( MinigameIntro.Panel )
 		function MinigameIntro.Panel:Paint( w, h )
 			-- Draw background blue
-			--surface.SetDrawColor( COLOUR_UI_BACKGROUND )
 			surface.SetDrawColor( self.Colour )
 			surface.DrawRect( 0, 0, w, h )
-
-			-- TODO TEMP VIDEO
-			-- if ( time <= CurTime() ) then
-			-- 	MinigameIntro.Panel.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
-			-- 	MinigameIntro.Panel.Highlight = GetColourHighlight( MinigameIntro.Panel.Colour )
-			-- 	self.Background = math.random( 1, #GAMEMODE.Backgrounds )
-			-- 	GAMEMODE.Backgrounds[self.Background].Init( self )
-			-- 	time = CurTime() + 1
-			-- end
 
 			-- Draw background
 			GAMEMODE.Backgrounds[self.Background].Render( self, w, h )
@@ -326,11 +317,12 @@ if ( CLIENT ) then
 		local font = "CloseCaption_Normal"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
+			twidth = 128
 		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
 		label:SetPos( rightx - rightwidth / 2.6 - twidth / 2, ScrH() / 7 )
-		label:SetSize( twidth, theight )
 		label:SetFont( font )
 		label:SetText( text )
+		label:SizeToContents()
 		label:SetTextColor( COLOUR_UI_TEXT_LIGHT )
 
 		-- Minigame specific UI
@@ -453,7 +445,7 @@ if ( CLIENT ) then
 	if ( MinigameIntro.Panel and MinigameIntro.Panel:IsValid() ) then
 		MinigameIntro.Panel:Remove()
 		MinigameIntro.Panel = nil
-		MinigameIntro:CreateMinigameIntroUI( "Scary Game" )
+		MinigameIntro:CreateMinigameIntroUI( "Teeth" )
 		MinigameIntro.Panel:MakePopup()
 		MinigameIntro.Panel:MoveToBack()
 		MinigameIntro.Panel:SetKeyboardInputEnabled( false )

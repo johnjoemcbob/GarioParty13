@@ -34,7 +34,10 @@ local thing = true
 GM.AddGame( "Teeth", "Default", {
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
-	Instructions = "",
+	TagLine = "TEETH",
+	Instructions = "Brush GMan's teeth clean!",
+	Controls = "Left click to brush!\nMove mouse to pilot the brush",
+	GIF = "https://i.imgur.com/6oIr4ew.gif",
 
 	SetupDataTables = function( self )
 		-- Runs on CLIENT and SERVER realms!
@@ -206,6 +209,7 @@ GM.AddGame( "Teeth", "Default", {
 		view.angles = angles
 		view.fov = fov
 		view.drawviewer = false
+		view.znear = 1
 
 		return view
 	end,
@@ -222,8 +226,10 @@ GM.AddGame( "Teeth", "Default", {
 
 	-- Custom functions
 	GetRagdoll = function( self )
+		--self:RemoveRagdoll()
 		if ( !self.PatientRagdoll or !self.PatientRagdoll:IsValid() ) then
 			self:CreateRagdoll()
+			self:InitGunk()
 		end
 		return self.PatientRagdoll
 	end,
@@ -266,9 +272,10 @@ GM.AddGame( "Teeth", "Default", {
 			"lower_lip",
 			"jaw_drop"
 		}
+		local mostlyopen = ( math.cos( CurTime() ) + math.sin( CurTime() ) ) * 0.05 + 0.95
 		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "lower_lip" ), 0 )
-		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "jaw_drop" ), 1 )
-		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "smile" ), 1 )
+		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "jaw_drop" ), mostlyopen )
+		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "smile" ), mostlyopen )
 		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "left_upper_raiser" ), 0 )
 		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "right_upper_raiser" ), 0 )
 		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "right_stretcher" ), 1 )
@@ -277,17 +284,37 @@ GM.AddGame( "Teeth", "Default", {
 		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "left_part" ), 1 )
 		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "right_mouth_drop" ), 1 )
 		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "left_mouth_drop" ), 1 )
+		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "wrinkler" ), math.sin( CurTime() * 0.5 ) * 0.2 )
 
 		-- Eye pose
 		local mult = 0.2
+		local speed = 5
 		local target = ragdoll:GetPos() + Vector( -100, 0, 15 ) + Vector( 0, gui.MouseX() - ScrW() / 2, -( gui.MouseY() - ScrH() / 2 ) ) * mult
+			if ( ragdoll.BlinkTarget == 100 ) then
+				target.z = math.max( 73, target.z )
+				speed = 15
+			end
 		ragdoll.EyeLast = ragdoll.EyeLast or target
-		ragdoll.EyeLast = LerpVector( FrameTime() * 5, ragdoll.EyeLast, target )
+		ragdoll.EyeLast = LerpVector( FrameTime() * speed, ragdoll.EyeLast, target )
 		ragdoll:SetEyeTarget( ragdoll.EyeLast )
 
 		-- Blinking
-		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "blink" ), 0 )
+		local blink = ragdoll.BlinkTarget or 0
+			if ( !ragdoll.NextBlink or ragdoll.NextBlink <= CurTime() ) then
+				ragdoll.BlinkTarget = 100
+				timer.Simple( 0.1, function()
+					ragdoll.BlinkTarget = 0
+				end )
+				ragdoll.NextBlink = CurTime() + math.random( 1.5, 2 ) * 3
+			end
+			local current = ragdoll:GetFlexWeight( ragdoll:GetFlexIDByName( "blink" ) )
+			current = Lerp( FrameTime(), current, blink )
+		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "blink" ), current )
+		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "half_closed" ), current )
+		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "right_lid_closer" ), current )
+		ragdoll:SetFlexWeight( ragdoll:GetFlexIDByName( "left_lid_closer" ), current )
 
+		-- Mouth open/noises
 		if ( thing ) then
 			self:OpenMouth()
 			thing = nil
@@ -300,18 +327,33 @@ GM.AddGame( "Teeth", "Default", {
 
 		-- Test gunk
 		local rnd = 1
-		--local model = "models/Combine_Helicopter/helicopter_bomb01.mdl"
 		local pos = pos + HEIGHT + Vector( 5.1, 0, 1.2 )
-		GAMEMODE.RenderCachedModel(
-			Gunk[rnd][1],
-			pos + Gunk[rnd][2], Gunk[rnd][3],
-			Vector( 1, 1, 1 ) * Gunk[rnd][4]
-		)
-		local screen = pos:ToScreen()
-		local dist = Vector( screen.x, screen.y ):Distance( Vector( gui.MousePos() ) )
-		if ( dist < 20 ) then
-			self.PatientRagdoll:StopSound( Sound_Brush_Teeth )
-			self.PatientRagdoll:EmitSound( Sound_Brush_Teeth, 75, 100, 1 )
+		local gunk_offsets = {
+			Vector( -0.5, -0.75, 0 ), -- Leftmost
+			Vector( -0.2, -0.55, 0 ), -- Left 2
+			Vector( -0.05, -0.3, 0 ), -- Left 3
+			Vector( 0, 0, 0 ), -- Middle
+			Vector( -0.08, 0.35, 0 ), -- Right 3
+			Vector( -0.26, 0.6, 0 ), -- Right 2
+			Vector( -0.4, 0.75, 0 ), -- Rightmost
+		}
+		for k, off in pairs( gunk_offsets ) do
+			if ( self.Gunks[k] ) then
+				local pos = pos + off + Gunk[rnd][2]
+				GAMEMODE.RenderCachedModel(
+					Gunk[rnd][1],
+					pos, Gunk[rnd][3],
+					Vector( 1, 1, 1 ) * Gunk[rnd][4]
+				)
+				local screen = pos:ToScreen()
+				local dist = Vector( screen.x, screen.y ):Distance( Vector( gui.MousePos() ) )
+				if ( dist < 10 ) then
+					self.PatientRagdoll:StopSound( Sound_Brush_Teeth )
+					self.PatientRagdoll:EmitSound( Sound_Brush_Teeth, 75, 100, 1 )
+					self.Gunks[k] = false
+					self:CheckClean()
+				end
+			end
 		end
 	end,
 	OpenMouth = function( self )
@@ -323,6 +365,24 @@ GM.AddGame( "Teeth", "Default", {
 		-- Stop intro and loop sounds
 		self.PatientRagdoll:StopSound( Sound_AAA_In )
 		self.PatientRagdoll:StopSound( Sound_AAA_Loop )
+	end,
+	InitGunk = function( self )
+		self.Gunks = {}
+		for i = 1, 7 do
+			self.Gunks[i] = math.random( 1, 2 ) == 1
+		end
+	end,
+	CheckClean = function( self )
+		local clean = true
+			for k, gunk in pairs( self.Gunks ) do
+				if ( gunk ) then
+					clean = false
+					break
+				end
+			end
+		if ( clean ) then
+			self:InitGunk()
+		end
 	end,
 } )
 

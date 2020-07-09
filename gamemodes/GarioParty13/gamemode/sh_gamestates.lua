@@ -17,6 +17,7 @@ function includeanddownload()
 		"sh_gs_board",
 		"sh_gs_minigame",
 		"sh_gs_minigame_intro",
+		"sh_gs_minigame_outro",
 	}
 	for k, file in pairs( files ) do
 		local path = dir .. file .. ".lua"

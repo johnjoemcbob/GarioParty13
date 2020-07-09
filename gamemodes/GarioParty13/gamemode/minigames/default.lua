@@ -74,7 +74,7 @@ GM.AddGame( "Default", "", {
 
 	-- Custom functions
 	Finish = function( self )
-		GAMEMODE:SwitchState( STATE_BOARD )
+		GAMEMODE:SwitchState( STATE_MINIGAME_OUTRO )
 	end,
 	Win = function( self, ply )
 		ply.WonLastGame = true
