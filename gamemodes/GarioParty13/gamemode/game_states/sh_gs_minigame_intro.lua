@@ -51,9 +51,10 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 		if ( SERVER ) then
 			local games = table.GetKeys( GAMEMODE.Games ) -- TODO TEMP USE THIS WHEN ALL IMPLEMENTED
 			local games = {
-				"Scary Game",
-				--"Teeth",
-				--"Screencheat",
+				-- "Scary Game",
+				-- "Teeth",
+				-- "Screencheat",
+				"Rooftop Rampage",
 			}
 			self.Minigame = games[math.random( 1, #games )]
 			MinigameIntro:BroadcastMinigame( self.Minigame )
@@ -81,9 +82,10 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 		end
 
 		-- Create UI
-		if ( CLIENT ) then
-			MinigameIntro:CreateMinigameIntroUI( self.Minigame )
-		end
+		-- Now moved to on receival of BroadcastMinigame ^
+		-- if ( CLIENT ) then
+		-- 	MinigameIntro:CreateMinigameIntroUI( self.Minigame )
+		-- end
 	end,
 	OnThink = function( self )
 		if ( CLIENT ) then
@@ -91,6 +93,10 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 				MinigameIntro:CreateMinigameIntroUIOverlay()
 			end
 		end
+	end,
+	OnTransitionAway = function( self )
+		-- Client only
+		MinigameIntro:ZoomOnGIF()
 	end,
 	OnFinish = function( self )
 		if ( CLIENT ) then
@@ -163,6 +169,7 @@ if ( CLIENT ) then
 		local minigame = net.ReadString()
 
 		GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame = minigame
+		MinigameIntro:CreateMinigameIntroUI( minigame )
 	end )
 
 	function MinigameIntro:SendWaitingToServer( tab )
@@ -239,6 +246,14 @@ end )
 
 -- UI
 if ( CLIENT ) then
+	function MinigameIntro:ZoomOnGIF()
+		-- local time = 0.3
+		-- local delay = 0
+		-- local ease = -10
+		-- self.GIF:MoveTo( -ScrW() / 8, -ScrH() / 8, time, delay, ease )
+		-- self.GIF:SizeTo( ScrW(), ScrW(), time, delay, ease )
+	end
+	
 	local layouts = {
 		[1] = {
 			{ Vector( 0, 0 ), 128 },
@@ -311,8 +326,9 @@ if ( CLIENT ) then
 		html:SetSize( width, width )
 		html:SetPos( leftx - videowidth / 2 - 6, ScrH() / 8 * 4.7 - width / 2 )
 		html:SetHTML( [[
-			<img style="text-align: center" src=" ]] .. GAMEMODE.Games[minigame].GIF .. [[ " width=" ]] .. videowidth .. [[ ">
+			<img style="text-align: center" src="]] .. GAMEMODE.Games[minigame].GIF .. [[" width="95%">
 		]] )
+		MinigameIntro.GIF = HTML
 
 		-- Tag line
 		local text = GAMEMODE.Games[minigame].TagLine
@@ -385,6 +401,7 @@ if ( CLIENT ) then
 				if ( !MinigameIntro.Ready ) then return end
 
 				local ready = MinigameIntro.Ready[ply]
+				if ( !ready or !MinigameIntro.Columns[ready] ) then return end -- Late joiner fix
 
 				-- Position and scale by number of playres in column
 				local count = #MinigameIntro.Columns[ready]

@@ -81,7 +81,7 @@ GM.AddGame( "Teeth", "Default", {
 		end
 
 		-- TODO TEMP REMOVE
-		timer.Simple( math.random( 3, 6 ), function()
+		timer.Simple( math.random( 5.1, 7 ) * 2, function()
 			if ( ply:GetGameName() == "Teeth" ) then
 				self:Win( ply )
 			end

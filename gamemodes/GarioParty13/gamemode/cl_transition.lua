@@ -81,6 +81,7 @@ hook.Add( "Think", HOOK_PREFIX .. "Think", function()
 	end
 end )
 
-hook.Add( "HUDPaint", HOOK_PREFIX .. "HUDPaint", function()
-	Transition:Render()
-end )
+-- Moved to sh_minigames_hooks
+-- hook.Add( "HUDPaint", HOOK_PREFIX .. "HUDPaint", function()
+-- 	Transition:Render()
+-- end )

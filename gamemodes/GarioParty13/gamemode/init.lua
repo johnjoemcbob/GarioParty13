@@ -19,7 +19,9 @@ AddCSLuaFile( "cl_backgrounds.lua" )
 include( "shared.lua" )
 
 -- Resources
+resource.AddFile( "data/GarioParty13_/scenes/city.json" )
 resource.AddFile( "materials/eye.png" )
+resource.AddFile( "materials/background.png" )
 resource.AddFile( "sound/orch.wav" )
 resource.AddFile( "sound/quack.wav" )
 resource.AddFile( "sound/boo.wav" )

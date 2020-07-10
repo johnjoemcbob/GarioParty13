@@ -7,6 +7,8 @@
 
 STATE_ERROR = "ERROR"
 
+local HOOK_PREFIX = HOOK_PREFIX .. "GameStates_"
+
 GM.GameStates = GM.GameStates or {}
 
 -- Load all states, add to download (called at bottom)
@@ -45,6 +47,19 @@ if ( SERVER ) then
 			net.WriteString( newstate )
 		net.Broadcast()
 	end
+
+	function GM.SendGameState( ply, newstate )
+		-- Communicate to specific client (late joiner normally)
+		net.Start( NETSTRING )
+			net.WriteString( STATE_ERROR )
+			net.WriteString( newstate )
+		net.Send( ply )
+	end
+
+	hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerInitialSpawn", function( ply )
+		print( "Late joiner; sending game state!" )
+		GAMEMODE.SendGameState( ply, GAMEMODE.CurrentState )
+	end )
 end
 if ( CLIENT ) then
 	net.Receive( NETSTRING, function( lngth )
@@ -53,6 +68,9 @@ if ( CLIENT ) then
 
 		-- Start/Finish clientside
 		Transition:Start()
+		if ( ( oldstate != STATE_ERROR ) and GAMEMODE.GameStates[oldstate].OnTransitionAway ) then
+			GAMEMODE.GameStates[oldstate]:OnTransitionAway()
+		end
 		timer.Simple( TRANSITION_DURATION, function()
 			if ( oldstate != STATE_ERROR ) then
 				GAMEMODE.GameStates[oldstate]:OnFinish()
@@ -99,11 +117,11 @@ function GM:GetStateName()
 end
 
 -- Gamemode hooks
-hook.Add( "Initialize", HOOK_PREFIX .. "GameStates_Initialize", function()
+hook.Add( "Initialize", HOOK_PREFIX .. "Initialize", function()
 	GAMEMODE:SetState( STATE_ERROR )
 	GAMEMODE:SwitchState( STATE_LOBBY )
 end )
-hook.Add( "Think", HOOK_PREFIX .. "GameStates_Think", function()
+hook.Add( "Think", HOOK_PREFIX .. "Think", function()
 	--print( GAMEMODE.GetStateName() )
 	if ( GAMEMODE:GetStateName() != STATE_ERROR ) then
 		GAMEMODE:GetState():OnThink()
@@ -112,7 +130,7 @@ end )
 
 -- Show current state on HUD
 -- if ( CLIENT ) then
--- 	hook.Add( "HUDPaint", HOOK_PREFIX .. "GameStates_HUDPaint", function()
+-- 	hook.Add( "HUDPaint", HOOK_PREFIX .. "HUDPaint", function()
 -- 		draw.SimpleText( GAMEMODE:GetStateName(), "DermaDefault", 50, 120, COLOUR_WHITE )
 -- 	end )
 -- end

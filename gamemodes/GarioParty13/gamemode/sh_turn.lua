@@ -42,12 +42,14 @@ if ( SERVER ) then
 	end )
 
 	function Turn:AskDirection( ply )
+		local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
+
 		-- Communicate to current player turn
 		net.Start( NETSTRING_ASKDIR )
+			net.WriteTable( Board.Data[space.x][space.y].Connections )
 		net.Send( ply )
 
 		if ( ply:IsBot() ) then
-			local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
 			local dir = math.random( 1, #Board.Data[space.x][space.y].Connections )
 			Turn:PickDir( dir )
 		end
@@ -78,7 +80,9 @@ if ( CLIENT ) then
 	end
 
 	net.Receive( NETSTRING_ASKDIR, function( lngth )
-		LocalPlayer().AskDir = true
+		local cons = net.ReadTable()
+
+		LocalPlayer().AskDir = cons
 		Turn.AskTime = CurTime()
 	end )
 
@@ -257,6 +261,25 @@ if ( CLIENT ) then
 				local text = "Which direction?"
 				local font = "DermaLarge"
 				draw.SimpleText( text, font, pos.x, pos.y, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+			end
+
+			-- Show connection keys on screen
+			if ( LocalPlayer().AskDir ) then
+				local strs = {
+					"A",
+					"D",
+				}
+				for k, con in pairs( LocalPlayer().AskDir ) do
+					if ( k <= 2 ) then -- TODO TEMP REMOVE
+						local pos = ( Vector( con.y, con.x ) * GP13_BOARD_SCALE ):ToScreen()
+						local x, y = pos.x, pos.y
+						local text = strs[k]
+						local font = "DermaLarge"
+						surface.SetDrawColor( COLOUR_WHITE )
+						surface.DrawTexturedRectRotated( x, y, 32, 32, 1 )
+						draw.SimpleText( text, font, x, y, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+					end
+				end
 			end
 		end
 	end )

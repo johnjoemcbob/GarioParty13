@@ -153,6 +153,7 @@ GM.AddGame( "Default", "", {
 	end,
 	GetFileName = function( self, extra )
 		if ( !extra ) then extra = "" end
+		file.CreateDir( "garioparty13" )
 		return "garioparty13/data_" .. self.Name .. extra .. ".txt"
 	end,
 } )

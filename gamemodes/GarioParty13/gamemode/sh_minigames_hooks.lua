@@ -134,6 +134,9 @@ if ( CLIENT ) then
 		if ( game and game.HUDPaint ) then
 			game:HUDPaint()
 		end
+
+		-- Render transitions above all else
+		Transition:Render()
 	end )
 
 	hook.Add( "PreRender", HOOK_PREFIX .. "PreRender", function()
@@ -192,6 +195,13 @@ if ( CLIENT ) then
 		local game = LocalPlayer():GetGame()
 		if ( game and game.PostDrawOpaqueRenderables ) then
 			game:PostDrawOpaqueRenderables( depth, skybox )
+		end
+	end )
+
+	hook.Add( "SetupWorldFog", HOOK_PREFIX .. "SetupWorldFog", function()
+		local game = LocalPlayer():GetGame()
+		if ( game and game.SetupWorldFog ) then
+			return game:SetupWorldFog()
 		end
 	end )
 

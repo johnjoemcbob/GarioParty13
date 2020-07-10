@@ -5,6 +5,8 @@
 -- Clientside backgrounds
 --
 
+Material_Background_Lines = Material( "background.png" )
+
 GM.Backgrounds = {
 	{ -- Lines
 		Init = function( panel )
@@ -133,30 +135,45 @@ GM.Backgrounds = {
 			end
 		end,
 	},
-	{ -- Circles
+	{ -- Rotating lines image
 		Init = function( panel )
-			panel.Point = Vector( math.random( ScrW() / 2, ScrW() ), math.random( 0, ScrH() ) )
-			panel.Radius = math.random( 8, 128 )
-			panel.Circles = math.random( 12, 24 )
-			panel.Width = math.random( 4, 12 )
-			panel.Speed = math.random( -0.01, 0.01 )
+			panel.Point = Vector( math.random( 0, ScrW() ), math.random( 0, ScrH() ) )
+			panel.Speed = math.random( 1, 2 ) == 1 and 0.01 or -0.01
 		end,
 		Render = function( panel, w, h )
-			local radius = panel.Radius + math.sin( CurTime() ) * 4
+			local x, y = panel.Point.x, panel.Point.y
+			local size = ScrW() * 2
 
-			-- Draw circles
-			local width = panel.Width + 2 + math.sin( CurTime() / 2 ) * 4
-			local progress = math.abs( math.sin( CurTime() * panel.Speed ) ) * 2
-			for circle = 1, panel.Circles do
-				local rad = ScrW() / panel.Circles * ( circle + progress )
-				local x = panel.Point.x
-				local y = panel.Point.y
-				surface.SetDrawColor( panel.Highlight )
-				draw.NoTexture()
-				draw.CircleSegment( x, y, rad, 64, width, 0, 100 )
-			end
+			-- Image
+			surface.SetMaterial( Material_Background_Lines )
+			surface.SetDrawColor( panel.Highlight )
+			surface.DrawTexturedRectRotated( x, y, size, size, ( ( CurTime() * panel.Speed ) % 360 ) * 360 )
 		end,
 	},
+	-- { -- Circles
+	-- 	Init = function( panel )
+	-- 		panel.Point = Vector( math.random( ScrW() / 2, ScrW() ), math.random( 0, ScrH() ) )
+	-- 		panel.Radius = math.random( 8, 64 )
+	-- 		panel.Circles = math.random( 12, 24 ) / 3
+	-- 		panel.Width = math.random( 4, 12 ) * 3
+	-- 		panel.Speed = math.random( -0.01, 0.01 )
+	-- 	end,
+	-- 	Render = function( panel, w, h )
+	-- 		local radius = panel.Radius + math.sin( CurTime() ) * 4
+
+	-- 		-- Draw circles
+	-- 		local width = panel.Width + 2 + math.sin( CurTime() / 2 ) * 4
+	-- 		local progress = math.abs( math.sin( CurTime() * panel.Speed ) ) * 2
+	-- 		for circle = 1, panel.Circles do
+	-- 			local rad = ScrW() / panel.Circles * ( circle + progress )
+	-- 			local x = panel.Point.x
+	-- 			local y = panel.Point.y
+	-- 			surface.SetDrawColor( panel.Highlight )
+	-- 			draw.NoTexture()
+	-- 			draw.CircleSegment( x, y, rad, 64, width, 0, 100 )
+	-- 		end
+	-- 	end,
+	-- },
 	-- { -- Weird and not great
 	-- 	Init = function( panel )
 	-- 		panel.Point = Vector( math.random( 0, ScrW() ), math.random( 0, ScrH() ) )

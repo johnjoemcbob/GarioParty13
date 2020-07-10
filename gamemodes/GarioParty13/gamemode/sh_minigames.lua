@@ -22,6 +22,8 @@ function includeanddownload()
 		"sh_mg_goose",
 		"sh_mg_donut",
 		"sh_mg_teeth",
+		"sh_mg_rooftoprampage",
+		"sh_mg_timetravel",
 	}
 	for k, file in pairs( files ) do
 		local path = dir .. file .. ".lua"
@@ -39,7 +41,7 @@ function GM.AddGame( name, base, data )
 	data.Name = name
 
 	-- Find base
-	print( name )
+	--print( name )
 	GM.Games[name] = {}
 		-- Base item
 		-- print( "base; " .. base )

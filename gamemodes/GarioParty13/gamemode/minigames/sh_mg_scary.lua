@@ -237,7 +237,10 @@ GM.AddGame( NAME, "Default", {
 	end,
 	LoadWaiting = function( self )
 		local json = file.Read( self:GetFileName( "waiting" ), "DATA" )
-		if !json then return end
+		if !json then
+			-- Load basic face
+			json = '[["eye","[0 0 0]"],["eye","[0.5 0 0]"],["mouth","[0.25 0.5625 0]"]]'
+		end
 
 		local tab = util.JSONToTable( json )
 		LocalPlayer().ScaryFace = tab
@@ -440,7 +443,7 @@ GM.AddGame( NAME, "Default", {
 			-- Delay a little so when they land they still stare at the player if not moving
 			local lastscared = ply.LastScaredTime
 			timer.Simple( 0.5, function()
-				if ( lastscared == ply.LastScaredTime ) then
+				if ( ply:OnGround() and lastscared == ply.LastScaredTime ) then
 					ply:SetNWEntity( "ScaredBy", ply )
 				end
 			end )
@@ -466,7 +469,8 @@ GM.AddGame( NAME, "Default", {
 		local x = 64
 		local y = ScrH() - 64
 		local size = 32
-		for ply, k in pairs( self.Players ) do
+		--for ply, k in pairs( self.Players ) do
+		for k, ply in pairs( player.GetAll() ) do
 			local txt = "" .. ply:GetNWInt( "Score", 0 )
 			local font = "DermaLarge"
 			local border = 16
@@ -509,7 +513,7 @@ GM.AddGame( NAME, "Default", {
 		for k, pillar in pairs( PILLARS ) do
 			local pos = pillar[1] + Vector( 0, 0, PILLAR_HEIGHT ) / 1.3329 * pillar[3]
 			cam.Start3D2D( pos, Angle( 0, -90, 0 ), 1 )
-				surface.SetDrawColor( Color( 255, 255, 255, 1 ) )
+				surface.SetDrawColor( Color( 255, 255, 255, 3 ) )
 				draw.NoTexture()
 				draw.Circle( 0, 0, 1 * pillar[3] * PILLAR_RADIUS, 64, 0 )
 			cam.End3D2D()
