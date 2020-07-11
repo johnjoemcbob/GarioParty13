@@ -174,18 +174,19 @@ GM.AddGame( NAME, "Goose", {
 			attacker:SetNWInt( "Score", attacker:GetNWInt( "Score", 0 ) + 1 )
 
 			if ( attacker:GetNWInt( "Score" ) >= self["SCORE_MAX"] ) then
-				attacker.CurrentModel = self["MODEL_MELON"]
+				self:Win( attacker )
+				--attacker.CurrentModel = self["MODEL_MELON"]
 				--attacker:SetModelScale( 2 ) -- Pssst, commented this out because it makes bad collision between players!
 
 				-- Reset the scores and respawn all the players
-				for ply, k in pairs( self.Players ) do
-					if ( ply != attacker ) then
-						ply.CurrentModel = self["MODEL_GOOSE"]
-						ply:SetModelScale( 1 )
-					end
-					ply:SetNWInt( "Score", 0 )
-					self:PlayerSpawn( ply )
-				end
+				-- for ply, k in pairs( self.Players ) do
+				-- 	if ( ply != attacker ) then
+				-- 		ply.CurrentModel = self["MODEL_GOOSE"]
+				-- 		ply:SetModelScale( 1 )
+				-- 	end
+				-- 	ply:SetNWInt( "Score", 0 )
+				-- 	self:PlayerSpawn( ply )
+				-- end
 			end
 		end
 	end,

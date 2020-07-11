@@ -205,6 +205,13 @@ if ( CLIENT ) then
 		end
 	end )
 
+	hook.Add( "RenderScreenspaceEffects", HOOK_PREFIX .. "RenderScreenspaceEffects", function()
+		local game = LocalPlayer():GetGame()
+		if ( game and game.RenderScreenspaceEffects ) then
+			game:RenderScreenspaceEffects()
+		end
+	end )
+
 	local hide = {
 		["CHudHealth"] = true,
 		["CHudBattery"] = true,

@@ -51,9 +51,9 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 		if ( SERVER ) then
 			local games = table.GetKeys( GAMEMODE.Games ) -- TODO TEMP USE THIS WHEN ALL IMPLEMENTED
 			local games = {
-				-- "Scary Game",
-				-- "Teeth",
-				-- "Screencheat",
+				"Scary Game",
+				"Teeth",
+				"Screencheat",
 				"Rooftop Rampage",
 			}
 			self.Minigame = games[math.random( 1, #games )]
