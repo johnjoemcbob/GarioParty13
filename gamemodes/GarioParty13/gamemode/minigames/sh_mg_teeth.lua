@@ -116,6 +116,8 @@ GM.AddGame( "Teeth", "Default", {
 		-- ply
 	end,
 	PostDrawOpaqueRenderables = function( self )
+		if ( !LocalPlayer().BackgroundData ) then return end
+
 		local pos = LocalPlayer():GetPos()
 		pos = POS
 

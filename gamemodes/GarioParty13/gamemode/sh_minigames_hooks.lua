@@ -97,6 +97,13 @@ if ( SERVER ) then
 	hook.Add( "PlayerSwitchFlashlight", HOOK_PREFIX .. "PlayerSwitchFlashlight", function( ply, enabled )
 		return false
 	end )
+	
+	hook.Add( "SetupMove", HOOK_PREFIX .. "SetupMove", function( ply, mv )
+		local game = ply:GetGame()
+		if ( game and game.SetupMove ) then
+			game:SetupMove( ply, mv )
+		end
+	end )
 end
 
 if ( CLIENT ) then
@@ -153,10 +160,17 @@ if ( CLIENT ) then
 		end
 	end )
 
-	hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "PostDrawOpaqueRenderables", function()
+	hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "PostDrawOpaqueRenderables", function( depth, skybox )
 		local game = LocalPlayer():GetGame()
 		if ( game and game.PostDrawOpaqueRenderables ) then
-			return game:PostDrawOpaqueRenderables()
+			game:PostDrawOpaqueRenderables( depth, skybox )
+		end
+	end )
+
+	hook.Add( "PostDrawTranslucentRenderables", HOOK_PREFIX .. "PostDrawTranslucentRenderables", function( depth, skybox )
+		local game = LocalPlayer():GetGame()
+		if ( game and game.PostDrawTranslucentRenderables ) then
+			game:PostDrawTranslucentRenderables( depth, skybox )
 		end
 	end )
 
@@ -189,13 +203,6 @@ if ( CLIENT ) then
 	
 		-- Hide labels option in games
 		if ( LocalPlayer():GetGame() and LocalPlayer():GetGame().HideLabels == true ) then return end
-	end )
-
-	hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. "PostDrawOpaqueRenderables", function( depth, skybox )
-		local game = LocalPlayer():GetGame()
-		if ( game and game.PostDrawOpaqueRenderables ) then
-			game:PostDrawOpaqueRenderables( depth, skybox )
-		end
 	end )
 
 	hook.Add( "SetupWorldFog", HOOK_PREFIX .. "SetupWorldFog", function()
