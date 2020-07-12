@@ -62,7 +62,7 @@ if ( CLIENT ) then
 		ply.BoardModel.Moves = result
 
 		-- Animate player hitting it
-		ply.BoardModel:ResetSequence( "cheer1" )
+		ply.BoardModel:ResetSequence( "jump_magic" )
 		ply.BoardModel.NextPlay = CurTime() + 1
 		ply.TempDice = nil
 

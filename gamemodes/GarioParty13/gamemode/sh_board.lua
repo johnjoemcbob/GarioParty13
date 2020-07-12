@@ -13,6 +13,7 @@ GP13_BOARD_SPACE_MODEL	= "models/hunter/misc/roundthing2.mdl"
 GP13_BOARD_SPACE_LINE	= "models/hunter/blocks/cube025x05x025.mdl"
 
 BOARD_MOVETIME 	= 0.2
+local LERPSPEED_ANGLE = 5
 
 SPACE_TYPE_DEFAULT	= 0
 SPACE_TYPE_NEGATIVE	= 1
@@ -192,7 +193,7 @@ if ( CLIENT ) then
 			if ( !ply.BoardModel or !ply.BoardModel:IsValid() ) then
 				local pos = GP13_BOARD_POS
 				local ang = Angle( 0, 0, 0 )
-				ply.BoardModel = GAMEMODE.AddAnim( "models/eli.mdl", "run_all", pos, ang, 1 )
+				ply.BoardModel = GAMEMODE.AddAnim( ply:GetModel(), "run_all_01", pos, ang, 1 )
 			end
 
 			-- Target position and angle
@@ -209,18 +210,24 @@ if ( CLIENT ) then
 				pos = ply.BoardFromExact
 				local targetpos = Board:GetTargetPos( ply )
 				pos = LerpVector( progress, pos, targetpos )
-				ang = ( targetpos - pos ):Angle()
+				local target  = ( targetpos - pos ):Angle()
+					target.p = 0
+					target.r = 0
+				ply.BoardModel.Angle = ply.BoardModel.Angle or target
+				ply.BoardModel.Angle = LerpAngle( FrameTime() * LERPSPEED_ANGLE, ply.BoardModel.Angle, target )
+				ang = ply.BoardModel.Angle
 
 				-- Loop run animation
 				if ( ply.BoardModel.NextPlay <= CurTime() ) then
-					ply.BoardModel:ResetSequence( ply.BoardModel.MyAnim )
+					ply.BoardModel:ResetSequence( "swimming_all" )
+					--ply.BoardModel:ResetSequence( "sit" )
 					ply.BoardModel.Delay = ply.BoardModel:SequenceDuration()
 					ply.BoardModel.NextPlay = CurTime() + ply.BoardModel.Delay
 				end
 			else
 				if ( ply.BoardModel.NextPlay <= CurTime() ) then
 					-- Loop idle animation
-					ply.BoardModel:ResetSequence( "idle01" )
+					ply.BoardModel:ResetSequence( "idle_all_01" )
 					--ply.BoardModel:ResetSequence( "man_gun" )
 					ply.BoardModel.Delay = ply.BoardModel:SequenceDuration()
 					ply.BoardModel.NextPlay = CurTime() + ply.BoardModel.Delay
@@ -240,7 +247,9 @@ if ( CLIENT ) then
 			ply.BoardModel:SetAngles( ang )
 
 			-- Animate
+			--ply.BoardModel:SetCycle( math.sin( CurTime() * 10 ) + 1 )
 			ply.BoardModel:FrameAdvance()
+			--ply.BoardModel:SetAutomaticFrameAdvance( true )
 		end
 	end )
 
@@ -283,6 +292,7 @@ if ( CLIENT ) then
 		ply.BoardFromPos = ply.BoardTargetPos or Vector( 1, 1 )
 		ply.BoardFromExact = ply.BoardModel:GetPos()
 		ply.BoardTargetPos = pos
+		ply.BoardModel.NextPlay = 0
 
 		-- Register to new space
 		table.insert( self.Data[ply.BoardTargetPos.x][ply.BoardTargetPos.y].CurrentPlayers, ply )

@@ -109,7 +109,6 @@ end
 function Turn:Start()
 	self.Finished = false
 
-	-- TODO start [PLAYER TURN] intro animation
 	self.StartTime = CurTime()
 
 	self.State = TURN_ROLL

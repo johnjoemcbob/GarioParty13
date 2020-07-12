@@ -395,8 +395,14 @@ if ( CLIENT ) then
 			local icon = vgui.Create( "DModelPanel", MinigameIntro.Panel )
 			--icon:SetSize( 200, 200 )
 			--icon:SetPos( rightx - twidth / 2, y + 64 )
-			icon:SetModel( "models/player/alyx.mdl" )
+			icon:SetModel( ply:GetModel() )
 			icon.Size = 64
+			function icon:LayoutEntity( Entity ) return end	-- Disable cam rotation
+			local headpos = icon.Entity:GetBonePosition(icon.Entity:LookupBone("ValveBiped.Bip01_Head1"))
+				icon:SetLookAt(headpos)
+			local campos = headpos-Vector(-40, 0, -10)
+				icon:SetCamPos( campos )
+				icon.Entity:SetEyeTarget( campos )
 			function icon:Think()
 				if ( !MinigameIntro.Ready ) then return end
 
