@@ -33,24 +33,29 @@ GM.AddGame( "Screencheat", "Default", {
 		-- Runs on CLIENT and SERVER realms!
 		-- When game is first loaded
 
+		-- When each player joins, but should all be aroundabout at one time so should be fine??
 		if ( SERVER ) then
+			self:RemoveWorld()
+			self:AddWorld()
+
 			for k, wall in pairs( ents.FindByClass( "func_brush" ) ) do
 				wall:SetColor( GAMEMODE.ColourPalette[k] )
 			end
+		end
+	end,
+	Destroy = function( self )
+		-- Runs on CLIENT and SERVER realms!
+		-- When game is stopped
+
+		if ( SERVER ) then
+			self:RemoveWorld()
 		end
 	end,
 	PlayerJoin = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
 
-		-- Ensure walls are painted (if it fails due to server starup)
-		self:Init()
-
-		-- When each player joins, but should all be aroundabout at one time so should be fine??
-		if ( SERVER ) then
-			self:RemoveWorld()
-			self:AddWorld()
-		end
+		self.base:PlayerJoin( ply )
 
 		if ( CLIENT ) then
 			ply.exampleRT = GetRenderTarget( "example_rt", ScrW(), ScrH() )

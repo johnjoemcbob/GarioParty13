@@ -10,6 +10,7 @@ ENT.AdminSpawnable = true
 
 GP13_Plate_Size	= 47.45
 GP13_Radius		= 47
+DONUT_ALLOWANCE	= 1
 
 include( "drive/drive_gp13_donuthole.lua" )
 
@@ -32,8 +33,14 @@ function ENT:Initialize()
 	end
 
 	-- Start driving
-	timer.Simple( 0.1, function()
-		drive.PlayerStartDriving( self.Owner, self, "drive_gp13_donuthole" )
+	timer.Simple( 0.2, function()
+		if ( SERVER ) then
+			drive.PlayerStartDriving( self.Owner, self, "drive_gp13_donuthole" )
+		end
+		if ( CLIENT ) then
+			self:SetPredictable( true )
+			drive.PlayerStartDriving( self.Owner, self, "drive_gp13_donuthole" )
+		end
 	end )
 end
 

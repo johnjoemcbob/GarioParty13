@@ -41,9 +41,15 @@ function ENT:SpawnFunction( ply, tr, ClassName )
 end
 
 -- function ENT:Initialize()
+-- 	self:SetPos( self:GetPos() - Vector( 0, 0, 5 ) )
 -- end
 
+local init = false
 function ENT:Think()
+	if ( !init ) then
+		self:ResizePhysics( 1 )
+		init = true
+	end
 	-- if ( true ) then return end
 
 	-- Resize
@@ -55,11 +61,17 @@ function ENT:Think()
 		-- for k, v in pairs( ents.FindInSphere( self:GetPos(), GP13_Radius * scale ) ) do
 			-- if ( v:GetClass() == "prop_physics" ) then
 		for k, v in pairs( ents.FindByClass( "prop_physics" ) ) do
-			if ( self:GetPos():DistToSqr( v:GetPos() ) <= ( GP13_Radius * scale ) * ( GP13_Radius * scale ) ) then
+			if ( self:GetPos():DistToSqr( v:GetPos() ) <= ( GP13_Radius * scale ) * ( GP13_Radius * scale ) * DONUT_ALLOWANCE ) then
 				local index = v:EntIndex()
 				if ( !self.Inside[index] ) then
-					print( "move in" )
+					--print( "move in" )
 					self.Inside[index] = constraint.NoCollideWorld( v, game.GetWorld(), 0, 0 )
+				
+					local phys = v:GetPhysicsObject()
+					if ( phys and phys:IsValid() ) then
+						phys:Wake()
+						phys:ApplyForceOffset( Vector( 0, 0, phys:GetMass() * 50 ), v:GetPos() + self.PullOffset )
+					end
 				end
 				tickfound[index] = true
 			end
@@ -91,9 +103,10 @@ function ENT:Think()
 		local down = Vector( 0, 0, -1 )
 		local vertforce = 10
 		local horiforce = 0-- -250
-		local minvel = 10
+		local minvel = 20
 		local dir = ( ent:GetPos() - self:GetPos() ):GetNormalized()
-		if ( ent:GetVelocity():Length() < minvel ) then
+		--print( ent:GetVelocity():LengthSqr() )
+		if ( ent:GetVelocity():LengthSqr() < minvel ) then
 			local phys = ent:GetPhysicsObject()
 			if ( phys and phys:IsValid() ) then
 				phys:Wake()
@@ -105,7 +118,7 @@ function ENT:Think()
 		if ( ent:GetPos().z + self.RemoveAtDepth < self:GetPos().z ) then
 			if ( !ent.GP13_Removed ) then
 				timer.Simple( self.RemoveTime, function()
-					if ( ent and ent:IsValid() ) then
+					if ( ent and ent:IsValid() and self.Inside ) then
 						ent:Remove()
 						self.Inside[index] = nil
 					end
@@ -115,6 +128,8 @@ function ENT:Think()
 				-- Resize
 				local scale = self.Size
 				self:Resize( Vector( scale, scale, 1 ) )
+
+				self.Owner:SetNWInt( "Score", self.Owner:GetNWInt( "Score", 0 ) + 1 )
 			else
 				-- ent:SetPos( ent:GetPos() + down * removeforce )
 			end

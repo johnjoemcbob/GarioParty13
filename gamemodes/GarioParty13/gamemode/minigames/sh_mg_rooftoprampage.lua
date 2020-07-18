@@ -58,17 +58,24 @@ GM.AddGame( NAME, "Goose", {
 			self:AddWalls()
 		end
 	end,
+	Destroy = function( self )
+		-- Runs on CLIENT and SERVER realms!
+		-- When game is stopped
+
+		if ( SERVER ) then
+			self:RemoveWalls()
+		end
+	end,
 	PlayerJoin = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
+
+		self.base:PlayerJoin( ply )
 
 		if ( SERVER ) then
 			ply.EggTimer = 0
 
 			ply.CurrentModel = self["MODEL_GOOSE"]
-
-			self:RemoveWalls()
-			self:AddWalls()
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -122,7 +129,7 @@ GM.AddGame( NAME, "Goose", {
 			--	ply:SetPos(clampedPos)
 			--end
 
-			if ( ply:KeyDown( IN_JUMP ) and ply.EggTimer <= 0 ) then
+			if ( ply:Alive() and ply:KeyDown( IN_JUMP ) and ply.EggTimer <= 0 ) then
 				ply:EmitSound( "quack.wav", 75, math.random( 50, 150 ) )
 
 				local eggPos = ply:GetPos()
@@ -194,9 +201,9 @@ GM.AddGame( NAME, "Goose", {
 		-- Runs on CLIENT realm!
 		-- LocalPlayer()
 
-		local x = 64
-		local y = ScrH() - 64
-		local size = 32
+		local size = ScrH() / ( #player.GetAll() * 4 )
+		local x = size * 2
+		local y = ScrH() - size * 2
 		for ply, k in pairs( self.Players ) do
 			local txt = "" .. ply:GetNWInt( "Score" )
 			local font = "DermaLarge"

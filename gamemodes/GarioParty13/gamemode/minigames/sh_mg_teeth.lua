@@ -66,9 +66,15 @@ GM.AddGame( "Teeth", "Default", {
 		-- Runs on CLIENT and SERVER realms!
 		-- When game is first loaded
 	end,
+	Destroy = function( self )
+		-- Runs on CLIENT and SERVER realms!
+		-- When game is stopped
+	end,
 	PlayerJoin = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
+
+		self.base:PlayerJoin( ply )
 
 		if ( CLIENT ) then
 			gui.EnableScreenClicker( true )
@@ -115,7 +121,7 @@ GM.AddGame( "Teeth", "Default", {
 		-- Runs on CLIENT realm!
 		-- ply
 	end,
-	PostDrawOpaqueRenderables = function( self )
+	PostDrawTranslucentRenderables = function( self )
 		if ( !LocalPlayer().BackgroundData ) then return end
 
 		local pos = LocalPlayer():GetPos()

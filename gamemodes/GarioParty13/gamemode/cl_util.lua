@@ -7,6 +7,8 @@
 
 -- From: https://codea.io/talk/discussion/3430/has-somebody-an-ellipse-mesh-code
 function draw.Ellipses( x, y, radius, width, seg, rotate )
+	if ( !rotate ) then rotate = 0 end
+
     local offx = 0
 	local offy = 0
 	local rotate = -math.rad( rotate )
@@ -38,6 +40,7 @@ end
 
 -- More in shared.lua
 function draw.Circle( x, y, radius, seg, rotate )
+	if ( !rotate ) then rotate = 0 end
 	local cir = GAMEMODE.GetCirclePoints( x, y, radius, seg, rotate )
 	surface.DrawPoly( cir )
 end

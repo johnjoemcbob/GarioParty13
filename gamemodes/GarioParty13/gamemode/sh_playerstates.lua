@@ -137,8 +137,6 @@ end
 
 -- Gamemode hooks
 hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerStates_PlayerInitialSpawn", function( ply )
-	print( "initial spawn please")
-	print( ply )
 	ply:SetState( STATE_ERROR )
 	ply:SwitchState( PLAYER_STATE_JOINED )
 end )

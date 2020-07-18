@@ -18,6 +18,8 @@ GM.AddGame( "Default", "", {
 	PlayerJoin = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
+
+		self.Won = false
 	end,
 	PlayerSpawn = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -25,10 +27,10 @@ GM.AddGame( "Default", "", {
 
 		if ( SERVER ) then
 			-- Weapons
-			ply:Give( "gmod_tool" )
-			ply:Give( "gmod_camera" )
-			ply:Give( "weapon_physgun" )
-			ply:SwitchToDefaultWeapon()
+			-- ply:Give( "gmod_tool" )
+			-- ply:Give( "gmod_camera" )
+			-- ply:Give( "weapon_physgun" )
+			-- ply:SwitchToDefaultWeapon()
 
 			-- Spawn point
 			for k, spawn in RandomPairs( ents.FindByClass( "info_player_start" ) ) do
@@ -75,10 +77,20 @@ GM.AddGame( "Default", "", {
 	-- Custom functions
 	Finish = function( self )
 		GAMEMODE:SwitchState( STATE_MINIGAME_OUTRO )
+
+		-- TODO not great but probably not problematic
+		timer.Simple( 1, function()
+			self.Won = false
+		end )
 	end,
 	Win = function( self, ply )
+		if ( self.Won ) then return end
+
 		ply.WonLastGame = true
-		ply:SetNWInt( "Props", ply:GetNWInt( "Props", 0 ) + 5 )
+		if ( SERVER ) then
+			ply:AddScore( SCORE_WIN, true )
+		end
+		self.Won = true
 		self:Finish()
 	end,
 	-- Custom functions: Constants

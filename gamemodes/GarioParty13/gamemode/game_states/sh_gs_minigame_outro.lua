@@ -41,7 +41,7 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 			end
 
 			for k, ply in pairs( player.GetAll() ) do
-				ply.LastProps = ply:GetNWInt( "Props", 0 )
+				ply.LastProps = ply:GetScore()
 			end
 		end
 	end,
@@ -170,9 +170,13 @@ if ( CLIENT ) then
 
 		-- Render placing in top left
 		draw.SimpleText( GetPlacingString( placing ), "MinigameTitle", x + border / 2, y + border / 2, GetPlacingColour( placing ), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP )
+		local off = 0
+		if ( math.abs( ( y + border / 2 ) - ( y + h / 2 ) ) <= 64 ) then
+			off = 96
+		end
 
 		-- Render player name at left
-		draw.SimpleText( tostring( ply ), "DermaLarge", x + border, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+		draw.SimpleText( tostring( ply ), "DermaLarge", x + off + border, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
 
 		-- Render current props score at right
 		local progress = 0
@@ -180,13 +184,13 @@ if ( CLIENT ) then
 			if ( ply.OutroPanel.StartNumberTime ) then
 				progress = math.Clamp( ( CurTime() - ply.OutroPanel.StartNumberTime ) / DURATION_UPDATE_PROPS, 0, 1 )
 				if ( progress >= 1 ) then
-					props = ply:GetNWInt( "Props", 0 )
+					props = ply:GetScore()
 				end
 			end
 		local textx = x + w - border
-		local width = draw.SimpleText( props .. " Props!", "DermaLarge", textx, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+		local width = draw.SimpleText( props .. " " .. SCORE_NAME .. "!", "DermaLarge", textx, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
 		local colour = COLOUR_NEGATIVE
-		local add = ply:GetNWInt( "Props", 0 ) - ply.LastProps
+		local add = ply:GetScore() - ply.LastProps
 		if ( progress < 1 and add != 0 ) then
 			if ( add > 0 ) then
 				add = "+" .. add
@@ -200,7 +204,7 @@ if ( CLIENT ) then
 		-- Get a list of key: ply, value: props - to be ordered below
 		local order = {}
 		for k, ply in pairs( player.GetAll() ) do
-			order[ply] = ply:GetNWInt( "Props", 0 )
+			order[ply] = ply:GetScore()
 			if ( last ) then
 				order[ply] = ply.LastProps or 0
 			end

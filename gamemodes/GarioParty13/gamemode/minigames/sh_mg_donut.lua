@@ -5,14 +5,57 @@
 -- Game: Donut County
 --
 
-GM.AddGame( "Donut County", "", {
+local PROPS = {}
+local PROPS_NUMBER_TO_SPAWN = 5
+
+local DONUT_TIMELIMIT		= 30
+
+local AREA = {
+	Vector( 1800, -2100, 1160 ),
+	Vector( 800, -1100, 1160 ),
+}
+
+local NAME = "Donut County"
+GM.AddGame( NAME, "Default", {
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
 	Instructions = "Move around and drop things into your hole to grow!",
+	World = {},
 
 	Init = function( self )
 		-- Runs on CLIENT and SERVER realms!
 		-- When game is first loaded
+
+		if ( SERVER ) then
+			self:RemoveWorld()
+			self:AddWorld()
+
+			timer.Simple( DONUT_TIMELIMIT, function()
+				if ( GAMEMODE:GetStateName() == STATE_MINIGAME and GAMEMODE.GameStates[STATE_MINIGAME].Minigame == NAME ) then
+					-- Find max scoring player
+					local ply = nil
+						local maxscore = -1
+						for k, v in pairs( player.GetAll() ) do
+							local score = v:GetNWInt( "Score", 0 )
+							if ( score > maxscore ) then
+								ply = v
+								maxscore = score
+							end
+						end
+					self:Win( ply )
+				end
+			end )
+		end
+
+		self.StartTime = CurTime()
+	end,
+	Destroy = function( self )
+		-- Runs on CLIENT and SERVER realms!
+		-- When game is stopped
+
+		if ( SERVER ) then
+			self:RemoveWorld()
+		end
 	end,
 	PlayerJoin = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -20,9 +63,12 @@ GM.AddGame( "Donut County", "", {
 
 		if ( SERVER ) then
 			ply.Hole = ents.Create( "gp13_donuthole" )
-				ply.Hole:SetPos( Vector( math.random( -2065, 84 ), math.random( -714, 1119 ), -145.5 ) )
+				ply.Hole:SetPos( Vector( 1298, -1585, 1200 ) )
 				ply.Hole:SetOwner( ply )
 			ply.Hole:Spawn()
+			timer.Simple( 0.4, function()
+				ply.Hole:SetPos( Vector( 1298, -1585, 1137 ) )
+			end )
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -40,6 +86,48 @@ GM.AddGame( "Donut County", "", {
 	HUDPaint = function( self )
 		-- Runs on CLIENT realm!
 		-- LocalPlayer()
+		
+		local colour = GAMEMODE.ColourPalette[LocalPlayer():GetNWInt( "Colour" )]
+
+		-- Timer
+		local font = "DermaLarge"
+		local width = ScrW() / 4
+		local height = ScrH() / 16
+		local x = ScrW() / 2
+		local y = height
+		local border = height / 8
+		local elapsed = ( CurTime() - self.StartTime )
+		local time = DONUT_TIMELIMIT - elapsed
+		local percent = time / DONUT_TIMELIMIT
+		if ( time >= 0 ) then
+			surface.SetDrawColor( COLOUR_BLACK )
+			surface.DrawRect( x - width / 2, y - height / 2, width, height )
+			surface.SetDrawColor( colour )
+			surface.DrawRect( x - width / 2, y - height / 2, width * percent, height )
+			draw.SimpleText( math.ceil( time ), font, x, y, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+		end
+
+		-- Scores
+		local size = ScrH() / ( #player.GetAll() * 8 )
+		local x = size * 2
+		local y = ScrH() - size * 2
+		--for ply, k in pairs( self.Players ) do
+		for k, ply in pairs( player.GetAll() ) do
+			local txt = "" .. ply:GetNWInt( "Score", 0 )
+			local font = "DermaLarge"
+			local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+			local border = 16
+			surface.SetFont( font )
+			local width, height = surface.GetTextSize( txt )
+				width = width + border
+				height = height + border
+			--self:DrawGhost( x, y - height / 2, size, colour )
+			surface.SetDrawColor( colour )
+			draw.Circle( x, y, size, 32 )
+			draw.SimpleText( txt, font, x, y, Color( 0, 0, 0, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+			y = y - size * 4
+		end
 	end,
 	Scoreboard = function( self, ply, row )
 		-- Runs on CLIENT realm!
@@ -48,6 +136,9 @@ GM.AddGame( "Donut County", "", {
 	PostPlayerDraw = function( self, ply )
 		-- Runs on CLIENT realm!
 		-- ply
+	end,
+	PreDrawSkyBox = function( self )
+		return true
 	end,
 	PlayerLeave = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -60,4 +151,70 @@ GM.AddGame( "Donut County", "", {
 			end
 		end
 	end,
+
+	-- Custom functions
+	AddWorld = function( self )
+		-- Props
+		for k, size in pairs( PROPS ) do
+			local tospawn = PROPS_NUMBER_TO_SPAWN * #player.GetAll()
+				if ( k == 1 ) then
+					tospawn = tospawn * 2
+				end
+			for prop = 1, tospawn do
+				local ent = GAMEMODE.CreateProp(
+					size[math.random( 1, #size )],
+					Vector( math.random( AREA[1].x, AREA[2].x ), math.random( AREA[1].y, AREA[2].y ), AREA[1].z ),
+					Angle( 0, math.random( 0, 360 ), 0 ),
+					true
+				)
+				table.insert( self.World, ent )
+			end
+		end 
+	end,
+	RemoveWorld = function( self )
+		if ( self.World ) then
+			for k, ent in pairs( self.World ) do
+				if ( ent:IsValid() ) then
+					ent:Remove()
+				end
+			end
+		end
+	end,
 } )
+
+PROPS = {
+	["SMALL"] = {
+		"models/props_junk/PopCan01a.mdl",
+		"models/props_junk/CinderBlock01a.mdl",
+	},
+	["MEDIUM"] = {
+		"models/props_junk/metalgascan.mdl",
+		"models/props_junk/plasticbucket001a.mdl",
+	},
+	["LARGE"] = {
+		"models/props_interiors/Furniture_Couch02a.mdl",
+		"models/props_interiors/Furniture_chair03a.mdl",
+		"models/props_c17/FurnitureTable001a.mdl",
+		"models/props_c17/FurnitureTable002a.mdl",
+		"models/props_c17/FurnitureTable003a.mdl",
+		"models/props_c17/FurnitureWashingmachine001a.mdl",
+		"models/props_c17/FurnitureCouch002a.mdl",
+	},
+	["MASSIVE"] = {
+		"models/props_c17/furnitureStove001a.mdl",
+		"models/props_c17/display_cooler01a.mdl",
+		"models/props_c17/concrete_barrier001a.mdl",
+		"models/props_c17/canister_propane01a.mdl",
+		"models/props_c17/Lockers001a.mdl",
+		"models/props_interiors/VendingMachineSoda01a.mdl",
+	},
+}
+
+-- Hotreload helper
+if ( SERVER ) then
+	if ( GAMEMODE ) then
+		local self = GAMEMODE.Games[NAME]
+		self:RemoveWorld()
+		self:AddWorld()
+	end
+end

@@ -55,11 +55,6 @@ if ( SERVER ) then
 			net.WriteString( newstate )
 		net.Send( ply )
 	end
-
-	hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerInitialSpawn", function( ply )
-		print( "Late joiner; sending game state!" )
-		GAMEMODE.SendGameState( ply, GAMEMODE.CurrentState )
-	end )
 end
 if ( CLIENT ) then
 	net.Receive( NETSTRING, function( lngth )
@@ -68,6 +63,9 @@ if ( CLIENT ) then
 
 		-- Start/Finish clientside
 		Transition:Start()
+			if ( oldstate == STATE_ERROR ) then
+				Transition:Start( 1 )
+			end
 		if ( ( oldstate != STATE_ERROR ) and GAMEMODE.GameStates[oldstate].OnTransitionAway ) then
 			GAMEMODE.GameStates[oldstate]:OnTransitionAway()
 		end
@@ -120,6 +118,11 @@ end
 hook.Add( "Initialize", HOOK_PREFIX .. "Initialize", function()
 	GAMEMODE:SetState( STATE_ERROR )
 	GAMEMODE:SwitchState( STATE_LOBBY )
+
+	if ( CLIENT ) then
+		Transition:Start( 3 )
+		Transition:Update()
+	end
 end )
 hook.Add( "Think", HOOK_PREFIX .. "Think", function()
 	--print( GAMEMODE.GetStateName() )
@@ -127,6 +130,11 @@ hook.Add( "Think", HOOK_PREFIX .. "Think", function()
 		GAMEMODE:GetState():OnThink()
 	end
 end )
+if ( SERVER ) then
+	hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerInitialSpawn", function( ply )
+		GAMEMODE.SendGameState( ply, GAMEMODE.CurrentState )
+	end )
+end
 
 -- Show current state on HUD
 -- if ( CLIENT ) then

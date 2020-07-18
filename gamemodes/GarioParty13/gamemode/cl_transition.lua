@@ -15,8 +15,9 @@ TRANSITION_CIRCLESEGS	= 32
 local STATE_IN		= 0
 local STATE_STAY	= 1
 local STATE_OUT		= 2
+local STATE_LOAD	= 3
 
-function Transition:Start()
+function Transition:Start( state )
 	Transition.Active = true
 	Transition.StartTime = CurTime()
 	Transition.Duration = TRANSITION_DURATION
@@ -29,11 +30,7 @@ function Transition:Start()
 			radius = 0,
 		} )
 	end
-	Transition.State = STATE_IN
-end
-
-function Transition:Finish()
-	Transition.Active = false
+	Transition.State = state or STATE_IN
 end
 
 function Transition:Render()
@@ -47,38 +44,52 @@ function Transition:Render()
 	end
 end
 
-hook.Add( "Think", HOOK_PREFIX .. "Think", function()
-	if ( Transition.Active ) then
-		local progress = ( CurTime() - Transition.StartTime ) / Transition.Duration
+function Transition:Update()
+	if ( self.Active ) then
+		local progress = ( CurTime() - self.StartTime ) / self.Duration
 
 		-- Update state
-		if ( Transition.State == STATE_IN ) then
-			for k, circle in pairs( Transition.Circles ) do
+		if ( self.State == STATE_IN ) then
+			for k, circle in pairs( self.Circles ) do
 				circle.radius = ScrW() * progress
 				circle.off = ( 1 - progress ) * 5
 			end
-		elseif ( Transition.State == STATE_OUT ) then
-			for k, circle in pairs( Transition.Circles ) do
+		elseif ( self.State == STATE_OUT ) then
+			for k, circle in pairs( self.Circles ) do
 				circle.radius = ScrW() * ( 1 - progress )
 				circle.off = progress * 5
+			end
+		else
+			for k, circle in pairs( self.Circles ) do
+				circle.radius = ScrW()
+				circle.off = 0
 			end
 		end
 
 		-- Finish state
 		if ( progress >= 1 ) then
-			if ( Transition.State == STATE_IN ) then
-				Transition.State = STATE_STAY
-				Transition.StartTime = CurTime()
-				Transition.Duration = 0.2
-			elseif ( Transition.State == STATE_STAY ) then
-				Transition.State = STATE_OUT
-				Transition.StartTime = CurTime()
-				Transition.Duration = TRANSITION_DURATION
-			elseif ( Transition.State == STATE_OUT ) then
-				Transition:Finish()
+			if ( self.State == STATE_IN ) then
+				self.State = STATE_STAY
+				self.StartTime = CurTime()
+				self.Duration = 0.2
+			elseif ( self.State == STATE_STAY ) then
+				self.State = STATE_OUT
+				self.StartTime = CurTime()
+				self.Duration = TRANSITION_DURATION
+			elseif ( self.State == STATE_OUT ) then
+				self:Finish()
 			end
 		end
 	end
+end
+
+function Transition:Finish()
+	self.Active = false
+end
+
+-- Gamemode Hooks
+hook.Add( "Think", HOOK_PREFIX .. "Think", function()
+	Transition:Update()
 end )
 
 -- Moved to sh_minigames_hooks

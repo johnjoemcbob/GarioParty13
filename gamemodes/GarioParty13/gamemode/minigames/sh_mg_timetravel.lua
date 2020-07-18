@@ -73,11 +73,31 @@ local SOUNDS = {
 	"ambient/machines/teleport4.wav",
 }
 local SOUND_WALLRUN = "physics/body/body_medium_scrape_smooth_loop1.wav"
-local SOUND_STUCK = "hl1/fvox/internal_bleeding.wav"
+local SOUND_STUCK	= "hl1/fvox/internal_bleeding.wav"
+local SOUND_MUSIC	= "music/hl1_song10.mp3"
+
+local PARTICLE_TIMETRAVEL	= "GunshipImpact"
+local PARTICLE_LIFESIGN		= "inflator_magic"
 
 local FOGS = {
 	0,
 	0.7,
+}
+
+local SPAWNS = {
+	Vector( -2637, -3049, 768 ),
+	Vector( -2610, -2512, 768 ),
+	Vector( -1938, -3068, 768 ),
+	Vector( -2131, -2714, 938 ),
+	Vector( -2203, -2509, 938 ),
+	Vector( -2016, -2446, 938 ),
+	Vector( -1832, -2599, 938 ),
+	Vector( -2175, -2457, 768 ),
+	Vector( -1879, -2587, 768 ),
+	Vector( -1859, -2360, 768 ),
+	Vector( -2319, -3026, 768 ),
+	Vector( -2717, -2744, 768 ),
+	Vector( -2495, -2762, 777 ),
 }
 
 local TIME_PRESENT	= 0
@@ -125,16 +145,62 @@ GM.AddGame( NAME, "Default", {
 	Init = function( self )
 		-- Runs on CLIENT and SERVER realms!
 		-- When game is first loaded
+
+		if ( SERVER ) then
+			self:RemoveWorld()
+			self:AddWorld()
+		end
+
+		if ( SERVER ) then
+			-- Enemy spawns
+			local poses = {
+				Vector( -2707, -2504, 1280 ),
+				Vector( -2596, -2980, 1280 ),
+				Vector( -2040, -3072, 1280 ),
+				Vector( -2097, -2616, 1280 ),
+				Vector( -1912, -2474, 1280 ),
+				Vector( -1956, -2483, 1450 ),
+				Vector( -2211, -2495, 1450 ),
+				Vector( -2047, -2732, 1450 ),
+			}
+			local chances = {
+				[30] = nil,
+				[98] = "npc_antlion",
+				[100] = "npc_antlionguard",
+			}
+			for k, pos in pairs( poses ) do
+				local rnd = math.random( 0, 100 )
+				for val, class in SortedPairs( chances ) do
+					if ( rnd <= val ) then
+						if ( class ) then
+							local npc = GAMEMODE.CreateEnt( class, nil, pos, Angle( 0, 0, 0 ), true )
+							table.insert( self.World, npc )
+						end
+						break
+					end
+				end
+			end
+		end
+	end,
+	Destroy = function( self )
+		-- Runs on CLIENT and SERVER realms!
+		-- When game is stopped
+
+		if ( SERVER ) then
+			self:RemoveWorld()
+		end
 	end,
 	PlayerJoin = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
 
-		if ( SERVER ) then
-			self:RemoveWorld()
-			self:AddWorld()
+		self.base:PlayerJoin( ply )
 
+		if ( SERVER ) then
 			self:TimeTravel( ply )
+		end
+		if ( CLIENT ) then
+			ply.NextMusic = 0
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -142,8 +208,18 @@ GM.AddGame( NAME, "Default", {
 		-- ply
 
 		if ( SERVER ) then
-			-- TODO Better spawn points
-			ply:SetPos( POS )
+			-- Spawn points
+			local possible = table.shallowcopy( SPAWNS )
+			while ( #possible > 0 ) do
+				local index = math.random( 1, #possible )
+				local pos = possible[index]
+				local success = ply:TrySpawn( pos )
+				if ( success ) then
+					break
+				else
+					table.RemoveByValue( possible, pos )
+				end
+			end
 
 			ply:SetNWBool( "Stuck", false )
 
@@ -153,6 +229,12 @@ GM.AddGame( NAME, "Default", {
 				ply:SetRunSpeed( SPEED_RUN )
 				ply:SetJumpPower( 400 )
 			end )
+			
+			-- Weapons
+			ply:Give( "weapon_pistol" )
+			ply:GiveAmmo( 50, "Pistol", true )
+			ply:Give( "weapon_smg1" )
+			ply:GiveAmmo( 400, "SMG1", true )
 		end
 	end,
 	Think = function( self )
@@ -167,6 +249,13 @@ GM.AddGame( NAME, "Default", {
 		-- 		ply.LastTimeZone = current
 		-- 	end
 		-- end
+		if ( CLIENT ) then
+			local ply = LocalPlayer()
+			if ( !ply.NextMusic or ply.NextMusic <= CurTime() ) then
+				ply:EmitSound( SOUND_MUSIC )
+				ply.NextMusic = CurTime() + 60 + 44
+			end
+		end
 	end,
 	PlayerThink = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -192,12 +281,119 @@ GM.AddGame( NAME, "Default", {
 		if ( key == IN_ATTACK ) then
 		end
 	end,
+	PlayerGotKill = function( self, victim, inflictor, attacker )
+		-- Runs on SERVER realm!
+		-- victim/attacker
+
+		if ( attacker:IsValid() and attacker:IsPlayer() ) then
+			attacker:SetNWInt( "Score", attacker:GetNWInt( "Score", 0 ) + 1 )
+
+			if ( attacker:GetNWInt( "Score", 0 ) >= 5 ) then
+				self:Win( attacker )
+			end
+
+			GAMEMODE.EmitChainPitchedSound(
+				"FlyHigh",
+				attacker,
+				Sound_OrchestraHit,
+				75,
+				1,
+				100,
+				20,
+				5,
+				0,
+				20
+			)
+		end
+	end,
 	GetFallDamage = function( ply, speed )
 		return 0
 	end,
 	HUDPaint = function( self )
 		-- Runs on CLIENT realm!
 		-- LocalPlayer()
+		
+		local off = ScrW() / 64
+
+		-- Health
+		local colour = GAMEMODE.ColourPalette[LocalPlayer():GetNWInt( "Colour" )]
+		local percent = LocalPlayer():Health() / LocalPlayer():GetMaxHealth()
+		local size = ScrH() / 16
+		local width = size * 4
+		local x = ScrW() / 2
+		local y = ScrH()
+		surface.SetDrawColor( COLOUR_BLACK )
+		draw.Ellipses( x, y, size, width, 32 )
+		if ( LocalPlayer():Alive() and LocalPlayer():Health() > 0 ) then
+			surface.SetDrawColor( colour )
+			draw.Ellipses( x, y, size * percent * 0.95, width * 0.95, 32 )
+		end
+
+		-- Ammo
+		local font = "DermaLarge"
+		local ammoheight = ScrH() / 16
+		local ammowidth = ammoheight * 3
+		local x = ScrW() - ammowidth - off
+		local y = ScrH() - ammoheight - off
+		surface.SetDrawColor( COLOUR_BLACK )
+		draw.Ellipses( x, y, ammoheight, ammowidth, 32 )
+		local wep = LocalPlayer():GetActiveWeapon()
+		if ( LocalPlayer():Alive() and LocalPlayer():Health() > 0 and wep ) then
+			local clip = wep:Clip1()
+			local ammo = LocalPlayer():GetAmmoCount( wep:GetPrimaryAmmoType() )
+			draw.SimpleText( clip .. "/" .. ammo, font, x, y, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+		end
+
+		-- Time zone
+		local font = "DermaDefault"
+		local rad = ScrW() / 16
+		local x = ScrW() - rad - off
+		local y = ScrH() - rad - off - ammoheight * 2 - off
+		surface.SetDrawColor( COLOUR_BLACK )
+		draw.Circle( x, y, rad, 32 )
+		local target = 90 / 360 * 100
+			if ( self:GetTimeZone( LocalPlayer() ) == TIME_FUTURE ) then
+				target = 270 / 360 * 100
+			end
+		target = Angle( target, 0, 0 )
+		LocalPlayer().LastTimeAngle = LocalPlayer().LastTimeAngle or target
+		LocalPlayer().LastTimeAngle = LerpAngle( FrameTime() * 5, LocalPlayer().LastTimeAngle, target )
+		target = LocalPlayer().LastTimeAngle
+		surface.SetDrawColor( COLOUR_WHITE )
+		draw.CircleSegment( x, y, rad * 0.95, 32, rad, target.p, 53 )
+		-- Text
+		draw.SimpleText( "FUTURE", font, x, y - rad / 2, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+		draw.SimpleText( "PRESENT", font, x, y + rad / 2, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+		-- Stuck
+		if ( LocalPlayer().LastStuck ) then
+			local font = "MinigameTitle"
+			local x = ScrW() / 2
+			local y = ScrH() / 8 * 7
+			draw.SimpleText( "WARNING: INTERNAL BLEEDING DETECTED", font, x, y, COLOUR_NEGATIVE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+		end
+
+		-- Scores
+		local size = ScrH() / ( #player.GetAll() * 8 )
+		local x = size * 2
+		local y = ScrH() - size * 2
+		--for ply, k in pairs( self.Players ) do
+		for k, ply in pairs( player.GetAll() ) do
+			local txt = "" .. ply:GetNWInt( "Score", 0 )
+			local font = "DermaLarge"
+			local border = 16
+			local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+			surface.SetFont( font )
+			local width, height = surface.GetTextSize( txt )
+				width = width + border
+				height = height + border
+			--self:DrawGhost( x, y - height / 2, size, colour )
+			surface.SetDrawColor( colour )
+			draw.Circle( x, y, size, 32 )
+			draw.SimpleText( txt, font, x, y, Color( 0, 0, 0, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+			y = y - size * 4
+		end
 	end,
 	Scoreboard = function( self, ply, row )
 		-- Runs on CLIENT realm!
@@ -218,6 +414,16 @@ GM.AddGame( NAME, "Default", {
 	PlayerLeave = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
+
+		if ( SERVER ) then
+			if ( ply.WallLoopSound ) then
+				ply:StopLoopingSound( ply.WallLoopSound )
+				ply.WallLoopSound = nil
+			end
+		end
+		if ( CLIENT ) then
+			ply:StopSound( SOUND_MUSIC )
+		end
 	end,
 	SetupMove = function( self, ply, mv )
 		-- Don't fake jump if already able to
@@ -233,7 +439,7 @@ GM.AddGame( NAME, "Default", {
 		end
 
 		if ( ply.OnWall or ply.LastCouldJump + WALLJUMP_DELAYALLOWANCE >= CurTime() ) then
-			local vel = GetMoveVector( mv )
+			local vel = GetMoveVector( mv ) * 2
 				vel.z = ply:GetJumpPower()
 			mv:SetVelocity( vel )
 			ply.HasJumped = true
@@ -409,6 +615,9 @@ GM.AddGame( NAME, "Default", {
 		ply.LastTimeTravel = CurTime()
 	end,
 	OnTimeTravel = function( self, ply )
+		local lifesigns = {}
+		local offset = 0
+
 		if ( SERVER ) then
 			ply:ViewPunch( Angle( -5, 0, 0 ) )
 			ply:SetFOV( ply.OldFOV + FOV_PULL, TIME_BEFORE )
@@ -417,6 +626,40 @@ GM.AddGame( NAME, "Default", {
 		if ( CLIENT ) then
 			ply.DoFTarget = 9
 			DOF_Start()
+
+			-- Player leave - Particle effects
+			for bone = 1, ply:GetBoneCount() do
+				local pos = ply:GetBonePosition( bone )
+				if ( pos != nil ) then
+					--for i = 1, 4 do
+						local effectdata = EffectData()
+							effectdata:SetOrigin( pos )
+						util.Effect( PARTICLE_TIMETRAVEL, effectdata )
+					--end
+				end
+			end
+
+			-- Get all lifesigns from the current timezone [before leaving]
+			if ( ply == LocalPlayer() ) then
+				local current = self:GetTimeZone( ply )
+				offset = HEIGHT
+					if ( current == TIME_FUTURE ) then
+						offset = -HEIGHT
+					end
+					local function checkent( ent )
+						if ( self:GetTimeZone( ent ) == current ) then
+							table.insert( lifesigns, ent )
+						end
+					end
+				for k, v in pairs( ents.FindByClass( "npc_*" ) ) do
+					checkent( v )
+				end
+				for k, v in pairs( player.GetAll() ) do
+					if( v != ply ) then
+						checkent( v )
+					end
+				end
+			end
 		end
 		timer.Simple( TIME_BEFORE, function()
 			if ( SERVER ) then
@@ -428,39 +671,30 @@ GM.AddGame( NAME, "Default", {
 					ply.DoFTarget = nil
 					DOF_Kill()
 				end )
+
+				-- Other lifesign - Particle effects
+				for k, life in pairs( lifesigns ) do
+					for effect = 0, 1 do
+						timer.Simple( 0.2 * effect, function()
+							if ( life and life:IsValid() ) then
+								for bone = 1, life:GetBoneCount() do
+									local pos = life:GetBonePosition( bone )
+									if ( pos ) then
+										pos = pos + Vector( 0, 0, offset + 0 )
+										local effectdata = EffectData()
+											effectdata:SetOrigin( pos )
+											--effectdata:SetRadius( 100 )
+										util.Effect( PARTICLE_LIFESIGN, effectdata )
+									end
+								end
+							end
+						end )
+					end
+				end
 			end
 		end )
 	end,
 	CheckStuck = function( self )
-		-- local radius = 5
-		-- for _, ply in pairs( player.GetAll() ) do
-		-- 	local stuck = false
-		-- 		local poses = {
-		-- 			--Vector( 0, 0, 10 ),
-		-- 			Vector( 0, 0, 20 ),
-		-- 			Vector( 0, 0, 30 ),
-		-- 			Vector( 0, 0, 40 ),
-		-- 			Vector( 0, 0, 50 ),
-		-- 			Vector( 0, 0, 60 ),
-		-- 			Vector( 0, 0, 70 ),
-		-- 		}
-		-- 		local pos = ply:GetPos()
-		-- 		for k, off in pairs( poses ) do
-		-- 			local pos = pos + off
-		-- 			debugoverlay.Sphere( pos, radius, 10, Color( 255, 255, 255, 255 ) )
-		-- 			for k, v in pairs( ents.FindInSphere( pos, radius ) ) do
-		-- 				if ( v:GetModel() != "models/xqm/cylinderx2large.mdl" ) then
-		-- 					if ( string.find( v:GetClass(), "prop_" ) or ( v:IsPlayer() and v != ply ) ) then
-		-- 						print( "STUCK IN" )
-		-- 						print( v )
-		-- 						print( v:GetModel() )
-		-- 						stuck = true
-		-- 					end
-		-- 				end
-		-- 			end
-		-- 		end
-		-- 	ply:SetNWBool( "Stuck", stuck )
-		-- end
 		for _, ply in pairs( player.GetAll() ) do
 			local stuck = false
 				local phys = ply:GetPhysicsObject()
@@ -471,7 +705,6 @@ GM.AddGame( NAME, "Default", {
 		end
 	end,
 	GetTimeZone = function( self, ply )
-		--return ply:GetNWInt( "TimeTravel", TIME_PRESENT )
 		return ( ply:GetPos().z >= POS.z + HEIGHT - 4 ) and TIME_FUTURE or TIME_PRESENT
 	end,
 	PlayerThinkWallRun = function( self, ply )
@@ -508,8 +741,8 @@ GM.AddGame( NAME, "Default", {
 									pos, Angle( 0, 0, 0 ),
 									false
 								)
-								ply.WallRunFloor:SetMaterial( "Models/effects/vol_light001" )
-								ply.WallRunFloor:SetColor( Color( 0, 0, 0, 0 ) )
+								--ply.WallRunFloor:SetMaterial( "Models/effects/vol_light001" )
+								ply.WallRunFloor:SetColor( Color( 0, 0, 0, 255 ) )
 							end
 							ply.WallRunFloor.z = pos.z
 
@@ -569,7 +802,8 @@ GM.AddGame( NAME, "Default", {
 				if ( stuck != ply.LastStuck ) then
 					if ( stuck ) then
 						ply:EmitSound( SOUND_STUCK )
-						print( "start stuck!" )
+					else
+						ply:StopSound( SOUND_STUCK )
 					end
 					ply.LastStuck = stuck
 				end
@@ -586,12 +820,15 @@ if ( SERVER ) then
 	GM.Games[NAME].SendStartTimeTravel = function( self, ply )
 		-- Communicate to client
 		net.Start( NETSTRING )
-		net.Send( ply )
+			net.WriteEntity( ply )
+		net.Broadcast()
 	end
 end
 if ( CLIENT ) then
 	net.Receive( NETSTRING, function( lngth )
-		GAMEMODE.Games[NAME]:OnTimeTravel( LocalPlayer() )
+		local ply = net.ReadEntity()
+
+		GAMEMODE.Games[NAME]:OnTimeTravel( ply )
 	end )
 end
 
@@ -1060,7 +1297,9 @@ PROPS = {
 
 -- Hotreload helper
 if ( SERVER ) then
-	local self = GAMEMODE.Games[NAME]
-	self:RemoveWorld()
-	self:AddWorld()
+	if ( GAMEMODE ) then
+		local self = GAMEMODE.Games[NAME]
+		self:RemoveWorld()
+		self:AddWorld()
+	end
 end

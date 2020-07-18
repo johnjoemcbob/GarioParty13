@@ -13,16 +13,14 @@ drive.Register( "drive_gp13_donuthole",
 	-- Called on creation
 	--
 	Init = function( self )
-
 		self.CameraDist 	= 0.5
 		self.CameraDistVel 	= 0.1
--- print( "hi" )
 	end,
 
 	--
 	-- Calculates the view when driving the entity
 	--
-	CalcView =  function( self, view )
+	CalcView = function( self, view )
 		-- print( "calc view" )
 		--
 		-- Use the utility method on drive_base.lua to give us a 3rd person view
@@ -30,11 +28,11 @@ drive.Register( "drive_gp13_donuthole",
 		local idealdist = math.max( 2, self.Entity:BoundingRadius() / 2 ) * self.CameraDist
 
 		-- print( idealdist )
-		self:CalcView_ThirdPersonClamped( view, idealdist, 0, { self.Entity } )
+		self:CalcView_ThirdPersonClamped( view, idealdist, 1, { self.Entity } )
 
 		-- view.origin = self.Entity:GetPos() + Vector( 0, 0, 100 )
 		view.angles.roll = 0
-
+		view.zfar = 1000
 	end,
 	CalcView_ThirdPersonClamped = function( self, view, dist, hullsize, entityfilter )
 		local eyeang = self.Player:EyeAngles()
@@ -49,7 +47,7 @@ drive.Register( "drive_gp13_donuthole",
 		eyeang.p = ( ( ( eyeang.p + 90 ) / 180 ) * ( max - min ) ) + min
 
 		-- Move the view backwards the size of the entity
-		local neworigin = view.origin - eyeang:Forward() * dist
+		local neworigin = view.origin + Vector( 0, 0, 15 ) - eyeang:Forward() * dist
 
 		if ( hullsize && hullsize > 0 ) then
 			-- Trace a hull (cube) from the old eye position to the new
@@ -173,7 +171,7 @@ drive.Register( "drive_gp13_donuthole",
 		-- more resistance so we slow down more.
 		--
 		if ( math.abs(mv:GetForwardSpeed()) + math.abs(mv:GetSideSpeed()) + math.abs(mv:GetUpSpeed()) < 0.1 ) then
-			vel = vel * 0.90
+			vel = vel * 0.70
 		else
 			vel = vel * 0.99
 		end
@@ -181,7 +179,16 @@ drive.Register( "drive_gp13_donuthole",
 		--
 		-- Add the velocity to the position (this is the movement)
 		--
-		pos = pos + vel * 1
+		-- trace first
+		local target = pos + vel * 1
+		local tr = util.TraceLine( {
+			start = pos,
+			endpos = target + vel * 2,
+			filter = self.Entity
+		} )
+		if ( !tr.HitWorld ) then
+			pos = target
+		end
 
 		--
 		-- We don't set the newly calculated values on the entity itself

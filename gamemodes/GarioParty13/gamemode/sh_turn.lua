@@ -12,6 +12,7 @@ Turn = Turn or {}
 TURN_ROLL		= 0
 TURN_MOVE		= 1
 TURN_CHOOSEDIR	= 2
+TURN_LAND		= 3
 
 TURN_INTRO_TIME	= 2
 TURN_ASK_TIME	= 2
@@ -112,7 +113,26 @@ function Turn:Start()
 	self.StartTime = CurTime()
 
 	self.State = TURN_ROLL
+	self.DiceRemaining = 1
 	Dice:Roll( self.Current )
+
+	if ( SERVER ) then
+		if ( self.Current:IsBot() ) then
+			timer.Simple( 0.5, function()
+				Dice:Hit()
+			end )
+		end
+	end
+
+	-- Override for round 1 to walk on board and then roll dice
+	if ( GAMEMODE.GameStates[STATE_BOARD].Round == 1 ) then
+	-- 	self.DiceRemaining = 2
+	-- 	if ( SERVER ) then
+	-- 		Dice:Hit( 1 )
+	-- 		Turn.State = TURN_MOVE
+	-- 		Board.MoveStart = CurTime()
+	-- 	end
+	end
 end
 
 -- Called from board game state
@@ -121,11 +141,10 @@ function Turn:Think()
 
 	local next = true
 	if ( SERVER ) then
-		if ( self.State == TURN_MOVE ) then
+		if ( !self.Finished and self.State == TURN_MOVE ) then
 			-- Move forwards one space at a time for each dice value
 			if ( !Board.MoveStart or Board.MoveStart + BOARD_MOVETIME <= CurTime() ) then
-				if ( Dice.Result > 0 ) then
-				--if ( true ) then
+				if ( Dice.Result and Dice.Result > 0 ) then
 					local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
 					if ( #Board.Data[space.x][space.y].Connections == 1 ) then
 						self:PickDir( 1 )
@@ -134,7 +153,21 @@ function Turn:Think()
 						self:AskDirection( self.Current )
 					end
 				else
-					self.Finished = true
+					self.DiceRemaining = self.DiceRemaining - 1
+					if ( self.DiceRemaining <= 0 ) then
+						self.State = TURN_LAND
+
+						-- React to space landed on
+						Turn:LandOnSpace()
+
+						-- End turn timer
+						timer.Simple( 1, function()
+							self.Finished = true
+						end )
+					else
+						self.State = TURN_ROLL
+						Dice:Roll( self.Current )
+					end
 				end
 			end
 		end
@@ -152,14 +185,30 @@ function Turn:PickDir( dir )
 	local ply = self.Current
 	local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
 	local target = Board.Data[space.x][space.y].Connections[dir]
-	Board:BroadcastMove( ply, target )
 	Dice.Result = Dice.Result - 1
+	Board:BroadcastMove( ply, target, Dice.Result )
 
 	Turn.State = TURN_MOVE
 end
 
-function Turn:Finish()
+function Turn:LandOnSpace()
+	local ply = self.Current
+	local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
+	local type = Board:GetSpace( space ).Type
 
+	if ( type == SPACE_TYPE_DEFAULT ) then
+		-- Add props
+		ply:AddScore( SCORE_SPACE_ADD )
+	elseif ( type == SPACE_TYPE_NEGATIVE ) then
+		-- Remove props
+		ply:AddScore( SCORE_SPACE_REMOVE )
+	else
+		print( "Warning: Unregistered space type: ", type )
+	end
+end
+
+function Turn:Finish()
+	Board.Moves = 0
 end
 
 function Turn:Next()
@@ -225,10 +274,13 @@ if ( CLIENT ) then
 				local pos = AnimateVectorBetween( progress, poses )
 
 				surface.SetDrawColor( COLOUR_WHITE )
-				surface.DrawTexturedRectRotated( pos.x, pos.y, pos.z, 64, 1 )
+				surface.DrawTexturedRectRotated( pos.x, pos.y, pos.z, 96, 1 )
 				local text = tostring( Turn:Get() ) .. "'s turn!"
 				local font = "DermaLarge"
-				draw.SimpleText( text, font, pos.x, pos.y, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+				draw.SimpleText( text, font, pos.x, pos.y - 12, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+				local text = "Jump to hit the dice!"
+				draw.SimpleText( text, font, pos.x, pos.y + 24, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 			--else
 			---- TODO temp testing
 			--	Turn.StartTime = CurTime()

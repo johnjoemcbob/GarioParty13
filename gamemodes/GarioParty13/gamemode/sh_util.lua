@@ -35,11 +35,9 @@ function LoadTableFromJSON( path, name )
 			return
 		end
 	end
-	print( path )
 
 	local json = file.Read( path, zone )
 	local tab = util.JSONToTable( json )
-	print( json )
 	return tab
 end
 

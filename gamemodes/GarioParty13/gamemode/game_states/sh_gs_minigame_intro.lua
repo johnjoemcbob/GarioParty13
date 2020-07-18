@@ -18,6 +18,7 @@ READY_PRACTICE	= 2
 
 local LERPSPEED = 600
 local LERPSIZESPEED = 200
+local MARGIN = 0 -- Set in panel creation
 
 -- Resources
 if ( SERVER ) then
@@ -45,19 +46,27 @@ if ( CLIENT ) then
 	})
 end
 
+local game_pool = {}
 GM.AddGameState( STATE_MINIGAME_INTRO, {
 	OnStart = function( self )
 		-- Find a random minigame
 		if ( SERVER ) then
-			local games = table.GetKeys( GAMEMODE.Games ) -- TODO TEMP USE THIS WHEN ALL IMPLEMENTED
-			local games = {
-				"Scary Game",
-				"Teeth",
-				"Screencheat",
-				"Rooftop Rampage",
-			}
-			self.Minigame = games[math.random( 1, #games )]
+			--local games = table.GetKeys( GAMEMODE.Games ) -- TODO TEMP USE THIS WHEN ALL IMPLEMENTED
+			if ( #game_pool == 0 ) then
+				game_pool = {
+					"Scary Game",
+					"Teeth",
+					"Screencheat",
+					"Rooftop Rampage",
+					"Time Travel",
+					"Donut County",
+				}
+			end
+			local ind = math.random( 1, #game_pool )
+			self.Minigame = game_pool[ind]
 			MinigameIntro:BroadcastMinigame( self.Minigame )
+			table.remove( game_pool, ind )
+			PrintTable( game_pool )
 		end
 
 		-- Init columns of readiness
@@ -169,6 +178,7 @@ if ( CLIENT ) then
 		local minigame = net.ReadString()
 
 		GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame = minigame
+		GAMEMODE.GameStates[STATE_MINIGAME].Minigame = minigame
 		MinigameIntro:CreateMinigameIntroUI( minigame )
 	end )
 
@@ -196,7 +206,8 @@ function MinigameIntro:MoveReady( ply, dir )
 	if ( SERVER ) then
 		-- Store on server (& self local)
 		local old = self.Ready[ply]
-		self:SetReady( ply, math.Clamp( old + dir, READY_NONE, READY_PRACTICE ) )
+		--self:SetReady( ply, math.Clamp( old + dir, READY_NONE, READY_PRACTICE ) )
+		self:SetReady( ply, math.Clamp( old + dir, READY_NONE, READY_REAL ) )
 
 		-- Voting
 		local start = true
@@ -207,6 +218,7 @@ function MinigameIntro:MoveReady( ply, dir )
 				end
 			end
 		if ( start ) then
+			-- CLIENT gets the STATE_MINIGAME.Minigame in NET broadcast above
 			GAMEMODE.GameStates[STATE_MINIGAME].Minigame = GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame
 			GAMEMODE:SwitchState( STATE_MINIGAME )
 		end
@@ -280,10 +292,12 @@ if ( CLIENT ) then
 	-- Create UI
 	local time = 0
 	function MinigameIntro:CreateMinigameIntroUI( minigame )
-		local leftx = ScrW() / 3.5
-		local leftwidth = ScrW() / 3
-		local rightwidth = ( ScrW() - ( leftx + leftwidth / 2 ) ) * 0.8
-		local rightx = ( leftx + leftwidth / 2 + rightwidth / 2 ) * 1.15
+		local bufferwidth = ScrW() / 16
+		local leftwidth = ScrW() / 2.2
+		local rightwidth = ScrW() - leftwidth - bufferwidth * 2
+		local height = ScrH()
+		local between = 0-- ScrH() / 48
+		MARGIN = ScrW() / 64
 
 		-- Fullscreen panel
 		MinigameIntro.Panel = vgui.Create( "DPanel" )
@@ -300,11 +314,21 @@ if ( CLIENT ) then
 
 			-- Draw background
 			GAMEMODE.Backgrounds[self.Background].Render( self, w, h )
+		end
 
+		local buffer = vgui.Create( "DPanel", MinigameIntro.Panel )
+		buffer:SetSize( bufferwidth, height )
+		buffer:Dock( LEFT )
+		function buffer:Paint( w, h ) end
+
+		-- Left
+		local left = vgui.Create( "DPanel", MinigameIntro.Panel )
+		left:SetSize( leftwidth, height )
+		left:Dock( LEFT )
+		function left:Paint( w, h )
 			-- Draw foreground white
-			local width = leftwidth * 1.2
 			surface.SetDrawColor( COLOUR_WHITE )
-			surface.DrawRect( leftx - width / 2, 0, width, h )
+			surface.DrawRect( 0, 0, w, h )
 		end
 
 		-- Minigame title
@@ -312,47 +336,65 @@ if ( CLIENT ) then
 		local font = "MinigameTitle"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
-		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
-		label:SetPos( leftx - twidth / 2, ScrH() / 18 - theight / 2 )
-		label:SetSize( twidth, theight )
+		local y = ScrH() / 18 - theight / 2
+		local width = leftwidth * 1.3
+		local label = vgui.Create( "DLabel", left )
+		label:SetPos( leftwidth / 2 - twidth / 2, y )
+		label:SetSize( width, theight )
 		label:SetFont( font )
 		label:SetText( text )
 		label:SetTextColor( COLOUR_UI_TEXT_DARK )
+		y = y + theight + between
+		--label:Dock( TOP )
 
 		-- Video HTML panel
-		local videowidth = leftwidth * 1.5
+		local videowidth = leftwidth * 1.1
 		local width = videowidth * 1.1
-		local html = vgui.Create( "DHTML" , MinigameIntro.Panel )
+		local html = vgui.Create( "DHTML", MinigameIntro.Panel )
 		html:SetSize( width, width )
-		html:SetPos( leftx - videowidth / 2 - 6, ScrH() / 8 * 4.7 - width / 2 )
+		html:SetPos( leftwidth * 0.1 * 0.65, y )
 		html:SetHTML( [[
 			<img style="text-align: center" src="]] .. GAMEMODE.Games[minigame].GIF .. [[" width="95%">
 		]] )
 		MinigameIntro.GIF = HTML
+		y = y + width * 0.72
 
 		-- Tag line
 		local text = GAMEMODE.Games[minigame].TagLine
 		local font = "ScoreboardDefault"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
-		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
-		label:SetPos( leftx - twidth / 2, ScrH() / 8 * 6.5 - theight / 2 )
+		local label = vgui.Create( "DLabel", left )
+		label:SetPos( leftwidth / 2 - twidth / 2, y )
 		label:SetSize( twidth, theight )
 		label:SetFont( font )
 		label:SetText( text )
 		label:SetTextColor( COLOUR_UI_TEXT_DARK )
+		y = y + theight
 
 		-- Minigame intructions
 		local text = GAMEMODE.Games[minigame].Instructions
 		local font = "CloseCaption_Normal"
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
-		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
-		label:SetPos( leftx - twidth / 2, ScrH() / 8 * 6.8 )
-		label:SetSize( twidth, theight )
+		local label = vgui.Create( "DLabel", left )
+		label:SetPos( MARGIN, y )
+		label:SetSize( leftwidth - MARGIN * 2, theight )
 		label:SetFont( font )
 		label:SetText( text )
 		label:SetTextColor( COLOUR_UI_TEXT_MED )
+
+		local buffer = vgui.Create( "DPanel", MinigameIntro.Panel )
+		buffer:SetSize( bufferwidth, height )
+		buffer:Dock( LEFT )
+		function buffer:Paint( w, h ) end
+
+		-- Right
+		local right = vgui.Create( "DPanel", MinigameIntro.Panel )
+		right:SetSize( rightwidth, height )
+		right:Dock( LEFT )
+		function right:Paint( w, h ) end
+		MinigameIntro.Panel.Right = right
 
 		-- Minigame controls
 		local text = GAMEMODE.Games[minigame].Controls
@@ -360,19 +402,23 @@ if ( CLIENT ) then
 			surface.SetFont( font )
 			local twidth, theight = surface.GetTextSize( text )
 			twidth = 128
-		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
-		label:SetPos( rightx - rightwidth / 2.6 - twidth / 2, ScrH() / 7 )
+		local label = vgui.Create( "DLabel", right )
+		label:SetPos( 0, ScrH() / 7 )
 		label:SetFont( font )
 		label:SetText( text )
 		label:SizeToContents()
 		label:SetTextColor( COLOUR_UI_TEXT_LIGHT )
+		function label:Paint( w, h )
+			surface.SetDrawColor( Color( 0, 0, 0, 100 ) )
+			surface.DrawRect( 0, 0, w, h )
+		end
 
 		-- Minigame specific UI
 		if ( GAMEMODE.Games[minigame].CreateWaitingUI ) then
 			local w, h = rightwidth, ScrH() / 3
-			local panel = vgui.Create( "DPanel", MinigameIntro.Panel )
+			local panel = vgui.Create( "DPanel", right )
 			panel:SetSize( w, h )
-			panel:SetPos( rightx - rightwidth / 2, ScrH() / 3 )
+			panel:SetPos( 0, ScrH() / 3 )
 			function panel:Paint( w, h )
 			end
 
@@ -385,14 +431,19 @@ if ( CLIENT ) then
 		-- Players/Votes
 		local font = "CloseCaption_Normal"
 		local y = ScrH() / 6 * 4.5
-		MinigameIntro:CreateMinigameIntroUILabel( "Not Ready", font, rightx - rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
-		MinigameIntro:CreateMinigameIntroUILabel( "_VOTE_", font, rightx + rightwidth / 3 / 1.7 - twidth / 2, y - 32, COLOUR_UI_TEXT_LIGHT )
-		MinigameIntro:CreateMinigameIntroUILabel( "Play for Real", font, rightx - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
-		MinigameIntro:CreateMinigameIntroUILabel( "Practice", font, rightx + rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
+		local xs = {
+			rightwidth / 4 * 1,
+			rightwidth / 4 * 3,
+		}
+		MinigameIntro:CreateMinigameIntroUILabel( "Not Ready", font, xs[1] - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
+		MinigameIntro:CreateMinigameIntroUILabel( "Ready", font, xs[2] - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
+		--MinigameIntro:CreateMinigameIntroUILabel( "_VOTE_", font, rightx + rightwidth / 3 / 1.7 - twidth / 2, y - 32, COLOUR_UI_TEXT_LIGHT )
+		--MinigameIntro:CreateMinigameIntroUILabel( "Play for Real", font, rightx - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
+		--MinigameIntro:CreateMinigameIntroUILabel( "Practice", font, rightx + rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
 
 		-- Test player icon
 		for k, ply in pairs( player.GetAll() ) do
-			local icon = vgui.Create( "DModelPanel", MinigameIntro.Panel )
+			local icon = vgui.Create( "DModelPanel", right )
 			--icon:SetSize( 200, 200 )
 			--icon:SetPos( rightx - twidth / 2, y + 64 )
 			icon:SetModel( ply:GetModel() )
@@ -426,10 +477,10 @@ if ( CLIENT ) then
 
 				-- Lerp move
 				local x = {}
-					x[0] = -rightwidth / 3
-					x[1] = 0
-					x[2] = rightwidth / 3
-				local target = Vector( rightx + x[ready] - twidth / 2 + offset.x, y + 32 + offset.y )
+					x[0] = xs[1]
+					x[1] = xs[2]
+					--x[2] = rightwidth / 3
+				local target = Vector( x[ready] - twidth / 2 + offset.x, y + 32 + offset.y )
 				icon.Pos = icon.Pos or target
 				icon.Pos = ApproachVector( FrameTime() * LERPSPEED, icon.Pos, target )
 				icon:SetPos( icon.Pos.x, icon.Pos.y )
@@ -438,16 +489,6 @@ if ( CLIENT ) then
 				icon:SetSize( icon.Size, icon.Size )
 			end
 		end
- 
-		-- Test button
-		-- local DermaButton = vgui.Create( "DButton", MinigameIntro.Panel )
-		-- DermaButton:SetText( "Say hi" )
-		-- DermaButton:SetPos( ScrW() - 250, ScrH() - 150 )
-		-- DermaButton:SetSize( 250, 150 )
-		-- DermaButton.DoClick = function()
-		-- 	RunConsoleCommand( "say", "Hi" )
-		-- 	print( "HI HI HI" )
-		-- end
 
 		MinigameIntro:CreateMinigameIntroUIOverlay()
 	end
@@ -456,12 +497,16 @@ if ( CLIENT ) then
 		surface.SetFont( font )
 		local twidth, theight = surface.GetTextSize( text )
 
-		local label = vgui.Create( "DLabel", MinigameIntro.Panel )
+		local label = vgui.Create( "DLabel", MinigameIntro.Panel.Right )
 			label:SetPos( x, y )
 			label:SetSize( twidth, theight )
 			label:SetFont( font )
 			label:SetText( text )
 			label:SetTextColor( colour )
+			function label:Paint( w, h )
+				surface.SetDrawColor( Color( 0, 0, 0, 100 ) )
+				surface.DrawRect( 0, 0, w, h )
+			end
 		return label
 	end
 

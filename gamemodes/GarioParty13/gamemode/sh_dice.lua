@@ -12,6 +12,8 @@ Dice = Dice or {}
 DICE_MODEL = "models/hunter/blocks/cube025x025x025.mdl"
 DICE_SCALE = 5
 
+local SOUND_DICE_HIT = "garrysmod/balloon_pop_cute.wav"
+
 -- Net
 local NETSTRING = HOOK_PREFIX .. "Net"
 local NETSTRING_RESULT = HOOK_PREFIX .. "Net_Result"
@@ -40,9 +42,6 @@ if ( SERVER ) then
 	net.Receive( NETSTRING_REQUEST, function( lngth, ply )
 		if ( Dice.Current and ( ply == Dice.Current or Dice.Current:IsBot() ) ) then
 			Dice:Hit()
-			timer.Simple( 1, function()
-				Turn.State = TURN_MOVE
-			end )
 		end
 	end )
 end
@@ -57,20 +56,20 @@ if ( CLIENT ) then
 		local ply = net.ReadEntity()
 		local result = net.ReadInt( NETSTRING_RESULT_INT )
 
+		if ( result == -1 ) then
+			-- Flag to simply hide the dice
+			Dice.Result = -1
+			Dice.Current = nil
+			return
+		end
+
 		-- Display the correct result side to all
 		Dice.Result = result
 		ply.BoardModel.Moves = result
 
 		-- Animate player hitting it
 		ply.BoardModel:ResetSequence( "jump_magic" )
-		ply.BoardModel.NextPlay = CurTime() + 1
-		ply.TempDice = nil
-
-		-- Hide soon
-		-- timer.Simple( 1, function()
-		-- 	Dice.Current = nil
-		-- 	Turn.State = TURN_MOVE
-		-- end )
+		ply.BoardModel.NextPlay = CurTime() + 0.3
 	end )
 
 	function Dice:RequestHit()
@@ -90,7 +89,9 @@ function Dice:Roll( ply )
 end
 
 function Dice:Hit( overwrite )
-	-- TODO, stop rolling
+	local ply = self.Current
+
+	-- Stop rolling
 	local result = overwrite or math.random( 1, 6 )
 	self.Result = result
 
@@ -98,10 +99,44 @@ function Dice:Hit( overwrite )
 	self:BroadcastResult( self.Current, self.Result )
 
 	self.Current = nil
+
+	if ( !overwrite or overwrite != -1 ) then
+		-- Play hit sound
+		timer.Simple( 0.3, function()
+			-- TODO NOT GREAT
+			for k, v in pairs( player.GetAll() ) do
+				v:EmitSound( SOUND_DICE_HIT )
+			end
+		end )
+
+		-- End dice phase
+		timer.Simple( 1, function()
+			Turn.State = TURN_MOVE
+		end )
+	end
 end
 
+function Dice:Hide()
+	if ( self.Current ) then
+		self:BroadcastResult( self.Current, -1 )
+
+		self.Current = nil
+	end
+end
+
+hook.Add( "KeyPress", HOOK_PREFIX .. "KeyPress", function( ply, key )
+	-- Hit dice input
+	if ( SERVER ) then
+		if ( ply == Turn.Current and ( key == IN_JUMP or key == IN_USE ) ) then
+			if ( Dice.Current ) then
+				Dice:Hit()
+			end
+		end
+	end
+end )
+
 if ( CLIENT ) then
-	hook.Add( "PreDrawEffects", HOOK_PREFIX .. "_PreDrawEffects", function()
+	hook.Add( "PreDrawEffects", HOOK_PREFIX .. "PreDrawEffects", function()
 		if ( Dice.Current ) then
 			-- Render cube above player's head
 			local pos = Dice.Current.BoardModel:GetPos()

@@ -21,6 +21,22 @@ hook.Add( "PlayerFootstep", HOOK_PREFIX .. "PlayerFootstep", function( ply, pos,
 	end
 end )
 
+hook.Add( "Think", HOOK_PREFIX .. "Think", function()
+	if ( GAMEMODE:GetStateName() == STATE_MINIGAME ) then
+		local game = GAMEMODE.GameStates[STATE_MINIGAME].Minigame
+		if ( game ) then
+			local game = GAMEMODE.Games[game]
+			game:Think()
+		end
+	end
+
+	for k, ply in pairs( player.GetAll() ) do
+		if ( ply:GetGame() and ply:GetGame().PlayerThink ) then
+			ply:GetGame():PlayerThink( ply )
+		end
+	end
+end )
+
 if ( SERVER ) then
 	hook.Add( "InitPostEntity", HOOK_PREFIX .. "InitPostEntity", function()
 		GAMEMODE.IsPostInit = true
@@ -40,20 +56,6 @@ if ( SERVER ) then
 
 			ply:GetGame():PlayerSpawn( ply )
 		end )
-	end )
-
-	hook.Add( "Think", HOOK_PREFIX .. "Think", function()
-		for k, game in pairs( GAMEMODE.Games ) do
-			if ( game.Think ) then
-				game:Think()
-			end
-		end
-	
-		for k, ply in pairs( player.GetAll() ) do
-			if ( ply:GetGame() and ply:GetGame().PlayerThink ) then
-				ply:GetGame():PlayerThink( ply )
-			end
-		end
 	end )
 
 	hook.Add( "KeyPress", HOOK_PREFIX .. "KeyPress", function( ply, key )
@@ -115,18 +117,6 @@ if ( CLIENT ) then
 			game:Init()
 		end
 		GAMEMODE.IsPostInit = true
-	end )
-
-	hook.Add( "Think", HOOK_PREFIX .. "Think", function()
-		for k, game in pairs( GAMEMODE.Games ) do
-			game:Think()
-		end
-
-		for k, ply in pairs( player.GetAll() ) do
-			if ( ply:GetGame() and ply:GetGame().PlayerThink ) then
-				ply:GetGame():PlayerThink( ply )
-			end
-		end
 	end )
 
 	hook.Add( "HUDPaint", HOOK_PREFIX .. "HUDPaint", function()

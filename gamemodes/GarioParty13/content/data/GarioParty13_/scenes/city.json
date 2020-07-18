@@ -23,7 +23,7 @@
 		"3": "{0 0 0}",
 		"Scale": "[10 10 1]",
 		"Material": "models/debug/debugwhite",
-		"Colour": "[30 50 10]"
+		"Colour": "[50 80 30]"
 	},
 	"sky": {
 		"2": "[0 0 -200]",

@@ -315,18 +315,22 @@ GM.AddGame( NAME, "Default", {
 			self:AddWorld()
 		end
 	end,
+	Destroy = function( self )
+		-- Runs on CLIENT and SERVER realms!
+		-- When game is stopped
+
+		if ( SERVER ) then
+			self:RemoveWorld()
+		end
+	end,
 	PlayerJoin = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
 
+		self.base:PlayerJoin( ply )
+
 		if ( CLIENT ) then
 			ply.ClientAngle = Angle( 0, 0, 0 )
-		end
-
-		-- When each player joins, but should all be aroundabout at one time so should be fine??
-		if ( SERVER ) then
-			self:RemoveWorld()
-			self:AddWorld()
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -466,9 +470,9 @@ GM.AddGame( NAME, "Default", {
 		-- Runs on CLIENT realm!
 		-- LocalPlayer()
 
-		local x = 64
-		local y = ScrH() - 64
-		local size = 32
+		local size = ScrH() / ( #player.GetAll() * 4 )
+		local x = size * 2
+		local y = ScrH() - size * 2
 		--for ply, k in pairs( self.Players ) do
 		for k, ply in pairs( player.GetAll() ) do
 			local txt = "" .. ply:GetNWInt( "Score", 0 )

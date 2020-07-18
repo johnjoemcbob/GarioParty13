@@ -61,9 +61,10 @@ function ENT:Draw()
 	local pos = self:GetPos()
 	local dir = self:GetUp()
 	local segs = 128
+	local off = 5
 
 	-- Center
-	cam.Start3D2D( pos + dir * 0, self:GetAngles(), scale * 1.1 )
+	cam.Start3D2D( pos + dir * off, self:GetAngles(), scale * 1.1 )
 		surface.SetDrawColor( GAMEMODE.ColourPalette[self:GetOwner():GetNWInt( "Colour" )] )
 		draw.NoTexture()
 		draw.Circle( 0, 0, 24, segs, 0 )
@@ -71,7 +72,7 @@ function ENT:Draw()
 
 	local function inner_mask()
 		-- Center
-		cam.Start3D2D( pos + dir * 0, self:GetAngles(), scale )
+		cam.Start3D2D( pos + dir * off, self:GetAngles(), scale )
 			surface.SetDrawColor( Color( 0, 0, 0, 255 ) )
 			draw.NoTexture()
 			draw.Circle( 0, 0, 24, segs, 0 )

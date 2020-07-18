@@ -18,6 +18,7 @@ GM.AddGameState( STATE_BOARD, {
 			ply:HideFPSController()
 		end
 
+		self.Round = ( self.Round or 0 ) + 1
 		Turn:Initialize()
 
 		if ( CLIENT ) then
@@ -27,6 +28,7 @@ GM.AddGameState( STATE_BOARD, {
 	OnThink = function( self )
 		local next = Turn:Think()
 		if ( !next ) then
+			Dice:Hide()
 			GAMEMODE:SwitchState( STATE_MINIGAME_INTRO )
 		end
 	end,
@@ -44,8 +46,10 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. STATE_BOARD .. "PostDrawOp
 		render.ClearDepth()
 
 		-- Render background scene
-		--Board.Scene = LoadScene( "city.json" ) -- TODO TEMP TESTING
-		RenderScene( Board.Scene, GP13_BOARD_POS + Vector( 2, 3.25, 0 ) * GP13_BOARD_SCALE )
+		Board.Scene = LoadScene( "city.json" ) -- TODO TEMP TESTING
+		render.SetLightingMode( 2 )
+			RenderScene( Board.Scene, GP13_BOARD_POS + Vector( 2, 3.25, 0 ) * GP13_BOARD_SCALE )
+		render.SetLightingMode( 0 )
 
 		-- Render board spaces
 		Board:Render()
