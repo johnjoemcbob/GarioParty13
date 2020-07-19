@@ -16,6 +16,12 @@ local DURATION_UPDATE_PROPS = 0.2
 local TIME_UPDATE_PROPS = 2
 local TIME_UPDATE_PLACINGS = 3
 
+local placingchange = {
+	"vo/npc/male01/nice.wav",
+	"vo/npc/female01/nice01.wav",
+	"vo/npc/female01/nice02.wav",
+}
+
 GM.AddGameState( STATE_MINIGAME_OUTRO, {
 	OnStart = function( self )
 		-- Create UI
@@ -24,7 +30,13 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 		end
 
 		-- Leave timer
-		timer.Simple( DURATION, function() GAMEMODE:SwitchState( STATE_BOARD ) end )
+		timer.Simple( DURATION, function()
+			if ( GAMEMODE.GameStates[STATE_BOARD].Round >= MAX_ROUNDS ) then
+				GAMEMODE:SwitchState( STATE_WIN )
+			else
+				GAMEMODE:SwitchState( STATE_BOARD )
+			end
+		end )
 	end,
 	OnThink = function( self )
 		if ( CLIENT ) then
@@ -40,7 +52,7 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 				MinigameOutro.Panel = nil
 			end
 
-			for k, ply in pairs( player.GetAll() ) do
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				ply.LastProps = ply:GetScore()
 			end
 		end
@@ -73,13 +85,13 @@ if ( CLIENT ) then
 		local pad = 0-- ScrH() / 64
 		local h = ScrH() * 0.9
 		local w = ScrW() - ( ScrH() - h )
-		local sloth = h / #player.GetAll() - pad
+		local sloth = h / #PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) - pad
 		local mid = vgui.Create( "DPanel", self.Panel )
 		mid:SetSize( w, h )
 		mid:Center()
 		mid:DockPadding( pad, pad, pad, pad )
 		function mid:Paint( w, h )
-			for k, ply in pairs( player.GetAll() ) do
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				MinigameOutro:RenderPlayerPanel( ply, w, sloth )
 			end
 		end
@@ -88,7 +100,7 @@ if ( CLIENT ) then
 
 		-- List of slots for players to fill
 		self.Slots = {}
-		for k, v in pairs( player.GetAll() ) do
+		for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			local slot = vgui.Create( "DPanel", self.SlotParent )
 				slot:SetSize( w, sloth )
 				slot:Dock( TOP )
@@ -98,19 +110,19 @@ if ( CLIENT ) then
 		end
 
 		-- Create the player panels
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			ply.LastProps = ply.LastProps or 0
 			ply.OutroPanel = {}
 		end
 		self:Reorder( true )
 		-- Start positions
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			self:FinishPlayerLerp( ply )
 		end
 
 		-- Begin reordering process with timers
 		timer.Simple( TIME_UPDATE_PROPS, function()
-			for k, ply in pairs( player.GetAll() ) do
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				ply.OutroPanel.StartNumberTime = CurTime()
 			end
 		end )
@@ -203,7 +215,7 @@ if ( CLIENT ) then
 	function MinigameOutro:Reorder( last )
 		-- Get a list of key: ply, value: props - to be ordered below
 		local order = {}
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			order[ply] = ply:GetScore()
 			if ( last ) then
 				order[ply] = ply.LastProps or 0
@@ -220,6 +232,8 @@ if ( CLIENT ) then
 	function MinigameOutro:SetPlayerSlot( ply, slot, lerp )
 		ply.OutroPanel.Target = slot
 		ply.OutroPanel.StartLerpTime = CurTime()
+
+		ply:EmitSound( placingchange[math.random( 1, #placingchange )] )
 	end
 
 	function MinigameOutro:FinishPlayerLerp( ply )

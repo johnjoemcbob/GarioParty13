@@ -8,6 +8,8 @@
 include( "shared.lua" )
 
 include( "cl_util.lua" )
+include( "cl_fonts.lua" )
+include( "cl_music.lua" )
 include( "cl_modelcache.lua" )
 include( "cl_scene.lua" )
 include( "cl_transition.lua" )

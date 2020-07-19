@@ -23,6 +23,7 @@ local NETSTRING_REQUESTEND = HOOK_PREFIX .. "Net_Turn_RequestEnd"
 local NETSTRING_ASKDIR = HOOK_PREFIX .. "Net_Turn_AskDirection"
 local NETSTRING_ANSWERDIR = HOOK_PREFIX .. "Net_Turn_AnswerDirection"
 local NET_INT = 4
+local NET_INT_ROUND = 7
 if ( SERVER ) then
 	util.AddNetworkString( NETSTRING )
 	util.AddNetworkString( NETSTRING_REQUESTEND )
@@ -33,6 +34,7 @@ if ( SERVER ) then
 		-- Communicate to all clients
 		net.Start( NETSTRING )
 			net.WriteEntity( ply )
+			net.WriteInt( GAMEMODE.GameStates[STATE_BOARD].Round, NET_INT_ROUND )
 		net.Broadcast()
 	end
 
@@ -67,6 +69,10 @@ end
 if ( CLIENT ) then
 	net.Receive( NETSTRING, function( lngth )
 		local ply = net.ReadEntity()
+		local round = net.ReadInt( NET_INT_ROUND )
+
+		-- Sync current round for display on board HUD, and to help late joiners
+		GAMEMODE.GameStates[STATE_BOARD].Round = round
 
 		-- Start/Finish clientside
 		Turn:Finish()
@@ -101,10 +107,19 @@ end
 
 function Turn:Initialize()
 	-- Cache the current players
-	self.Players = player.GetAll()
+	self.Players = PlayerStates:GetPlayers( PLAYER_STATE_PLAY )
 
-	-- Start the first player's turn
-	self:Switch( self.Players[1] )
+	if ( #self.Players == 0 ) then
+		-- TODO Bad but running out of time
+		timer.Simple( 0.5, function()
+			self.Players = PlayerStates:GetPlayers( PLAYER_STATE_PLAY )
+			-- Start the first player's turn
+			self:Switch( self.Players[1] )
+		end )
+	else
+		-- Start the first player's turn
+		self:Switch( self.Players[1] )
+	end
 end
 
 function Turn:Start()
@@ -257,6 +272,8 @@ if ( CLIENT ) then
 	end )
 
 	hook.Add( "HUDPaint", HOOK_PREFIX .. "HUDPaint", function()
+		draw.NoTexture()
+
 		-- Turn intro
 		if ( Turn:IsSystemActive() ) then
 			local progress = ( CurTime() - Turn.StartTime ) / TURN_INTRO_TIME

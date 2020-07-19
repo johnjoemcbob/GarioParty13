@@ -10,6 +10,8 @@ AddCSLuaFile( "shared.lua" )
 
 AddCSLuaFile( "cl_init.lua" )
 AddCSLuaFile( "cl_util.lua" )
+AddCSLuaFile( "cl_fonts.lua" )
+AddCSLuaFile( "cl_music.lua" )
 AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "cl_scene.lua" )
 AddCSLuaFile( "cl_transition.lua" )

@@ -63,6 +63,8 @@ GM.AddGame( "Screencheat", "Default", {
 				["$basetexture"] = ply.exampleRT:GetName(),
 				["$vertexcolor"] = 1
 			} )
+
+			Music:Play( MUSIC_TRACK_SCREENCHEAT )
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -147,7 +149,7 @@ GM.AddGame( "Screencheat", "Default", {
 		surface.DrawTexturedRect( 0, 0, ScrW(), ScrH() )
 
 		local function drawothers( ply, toggle )
-			for _, other in pairs( player.GetAll() ) do
+			for _, other in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				other:SetNoDraw( !toggle )
 				if ( other:GetActiveWeapon():IsValid() ) then
 					other:GetActiveWeapon():SetNoDraw( !toggle )
@@ -155,12 +157,12 @@ GM.AddGame( "Screencheat", "Default", {
 			end
 		end
 		local plycount = 0
-			for k, ply in pairs( player.GetAll() ) do
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				if ( ply:GetGameName() == LocalPlayer():GetGameName() ) then
 					plycount = plycount + 1
 				end
 			end
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			if ( ply:GetGameName() == LocalPlayer():GetGameName() ) then
 				drawothers( ply, false )
 					render.PushRenderTarget( LocalPlayer().exampleRT )
@@ -261,9 +263,11 @@ GM.AddGame( "Screencheat", "Default", {
 		-- ply
 
 		if ( CLIENT ) then
-			for k, ply in pairs( player.GetAll() ) do
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				ply:SetNoDraw( false )
 			end
+
+			Music:Pause( MUSIC_TRACK_SCREENCHEAT )
 		end
 	end,
 

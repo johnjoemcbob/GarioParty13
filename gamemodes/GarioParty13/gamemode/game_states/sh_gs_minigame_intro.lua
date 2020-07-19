@@ -26,24 +26,6 @@ if ( SERVER ) then
 end
 if ( CLIENT ) then
 	MAT_HEARTS = Material( "hearts.png", "noclamp smooth" )
-
-	surface.CreateFont( "MinigameTitle", {
-		font = "Arial",
-		extended = false,
-		size = 64,
-		weight = 500,
-		blursize = 0,
-		scanlines = 0,
-		antialias = true,
-		underline = false,
-		italic = false,
-		strikeout = false,
-		symbol = false,
-		rotary = false,
-		shadow = false,
-		additive = false,
-		outline = false,
-	})
 end
 
 local game_pool = {}
@@ -66,7 +48,6 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 			self.Minigame = game_pool[ind]
 			MinigameIntro:BroadcastMinigame( self.Minigame )
 			table.remove( game_pool, ind )
-			PrintTable( game_pool )
 		end
 
 		-- Init columns of readiness
@@ -79,7 +60,7 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 
 		-- Initialise none ready
 		MinigameIntro.Ready = {}
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			MinigameIntro:SetReady( ply, READY_NONE )
 
 			-- Bot testing
@@ -211,7 +192,7 @@ function MinigameIntro:MoveReady( ply, dir )
 
 		-- Voting
 		local start = true
-			for k, v in pairs( player.GetAll() ) do
+			for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				if ( self.Ready[v] != READY_REAL ) then
 					start = false
 					break
@@ -442,7 +423,7 @@ if ( CLIENT ) then
 		--MinigameIntro:CreateMinigameIntroUILabel( "Practice", font, rightx + rightwidth / 3 - twidth / 2, y, COLOUR_UI_TEXT_LIGHT )
 
 		-- Test player icon
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			local icon = vgui.Create( "DModelPanel", right )
 			--icon:SetSize( 200, 200 )
 			--icon:SetPos( rightx - twidth / 2, y + 64 )

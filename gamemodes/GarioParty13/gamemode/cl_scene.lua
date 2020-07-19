@@ -30,7 +30,7 @@ end
 function RenderScene( scene, pos, storecollisions, Collisions, BoundsMultiplier )
 	if ( !scene ) then return end
 	for k, detail in pairs( scene ) do
-		if ( detail[1] ) then
+		if ( detail[1] and detail[1] != "" ) then
 			local col = detail.Colour
 				if ( col == nil ) then
 					col = COLOUR_BASE

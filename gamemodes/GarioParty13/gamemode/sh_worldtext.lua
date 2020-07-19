@@ -58,7 +58,7 @@ if ( CLIENT ) then
 					angle:RotateAroundAxis( angle:Up(), text.Angle.r + text.RandomAngle + math.sin( CurTime() ) * 10 )
 				--cam.IgnoreZ( true )
 					local txt = text.Text
-					local font = "DermaLarge"
+					local font = "ScaryGame"
 					surface.SetFont( font )
 					local width, height = surface.GetTextSize( txt )
 					local mult = 0
@@ -69,7 +69,7 @@ if ( CLIENT ) then
 								mult = -1
 							end
 						end
-					local scale = text.Scale * math.min( 1, progress + 0.5 )
+					local scale = text.Scale * math.min( 1, progress + 0.5 ) / 4
 					cam.Start3D2D( pos - Vector( 0, 0, 1 ) * mult * width * scale, angle, scale )
 						if ( !text.InOut ) then
 							local a = 1 - ( math.abs( 0.5 - progress ) * 2 )

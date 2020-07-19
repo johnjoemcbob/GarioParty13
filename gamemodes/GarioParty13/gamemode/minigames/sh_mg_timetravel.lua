@@ -74,7 +74,6 @@ local SOUNDS = {
 }
 local SOUND_WALLRUN = "physics/body/body_medium_scrape_smooth_loop1.wav"
 local SOUND_STUCK	= "hl1/fvox/internal_bleeding.wav"
-local SOUND_MUSIC	= "music/hl1_song10.mp3"
 
 local PARTICLE_TIMETRAVEL	= "GunshipImpact"
 local PARTICLE_LIFESIGN		= "inflator_magic"
@@ -200,7 +199,7 @@ GM.AddGame( NAME, "Default", {
 			self:TimeTravel( ply )
 		end
 		if ( CLIENT ) then
-			ply.NextMusic = 0
+			Music:Play( MUSIC_TRACK_TIMETRAVEL )
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -249,13 +248,6 @@ GM.AddGame( NAME, "Default", {
 		-- 		ply.LastTimeZone = current
 		-- 	end
 		-- end
-		if ( CLIENT ) then
-			local ply = LocalPlayer()
-			if ( !ply.NextMusic or ply.NextMusic <= CurTime() ) then
-				ply:EmitSound( SOUND_MUSIC )
-				ply.NextMusic = CurTime() + 60 + 44
-			end
-		end
 	end,
 	PlayerThink = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -285,7 +277,7 @@ GM.AddGame( NAME, "Default", {
 		-- Runs on SERVER realm!
 		-- victim/attacker
 
-		if ( attacker:IsValid() and attacker:IsPlayer() ) then
+		if ( attacker:IsValid() and attacker:IsPlayer() and attacker != victim ) then
 			attacker:SetNWInt( "Score", attacker:GetNWInt( "Score", 0 ) + 1 )
 
 			if ( attacker:GetNWInt( "Score", 0 ) >= 5 ) then
@@ -338,7 +330,7 @@ GM.AddGame( NAME, "Default", {
 		surface.SetDrawColor( COLOUR_BLACK )
 		draw.Ellipses( x, y, ammoheight, ammowidth, 32 )
 		local wep = LocalPlayer():GetActiveWeapon()
-		if ( LocalPlayer():Alive() and LocalPlayer():Health() > 0 and wep ) then
+		if ( LocalPlayer():Alive() and LocalPlayer():Health() > 0 and wep and wep:IsValid() and wep.Clip1 ) then
 			local clip = wep:Clip1()
 			local ammo = LocalPlayer():GetAmmoCount( wep:GetPrimaryAmmoType() )
 			draw.SimpleText( clip .. "/" .. ammo, font, x, y, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
@@ -374,11 +366,11 @@ GM.AddGame( NAME, "Default", {
 		end
 
 		-- Scores
-		local size = ScrH() / ( #player.GetAll() * 8 )
+		local size = ScrH() / ( #PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) * 8 )
 		local x = size * 2
 		local y = ScrH() - size * 2
 		--for ply, k in pairs( self.Players ) do
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			local txt = "" .. ply:GetNWInt( "Score", 0 )
 			local font = "DermaLarge"
 			local border = 16
@@ -422,7 +414,7 @@ GM.AddGame( NAME, "Default", {
 			end
 		end
 		if ( CLIENT ) then
-			ply:StopSound( SOUND_MUSIC )
+			Music:Pause( MUSIC_TRACK_TIMETRAVEL )
 		end
 	end,
 	SetupMove = function( self, ply, mv )
@@ -654,7 +646,7 @@ GM.AddGame( NAME, "Default", {
 				for k, v in pairs( ents.FindByClass( "npc_*" ) ) do
 					checkent( v )
 				end
-				for k, v in pairs( player.GetAll() ) do
+				for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 					if( v != ply ) then
 						checkent( v )
 					end
@@ -695,7 +687,7 @@ GM.AddGame( NAME, "Default", {
 		end )
 	end,
 	CheckStuck = function( self )
-		for _, ply in pairs( player.GetAll() ) do
+		for _, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			local stuck = false
 				local phys = ply:GetPhysicsObject()
 				if ( phys and phys:IsValid() and phys:IsPenetrating() ) then
@@ -746,7 +738,7 @@ GM.AddGame( NAME, "Default", {
 							end
 							ply.WallRunFloor.z = pos.z
 
-							ply.WallLoopSound = ply:StartLoopingSound( SOUND_WALLRUN, 75, math.random( 80, 120 ), 0.3 )
+							ply.WallLoopSound = ply:StartLoopingSound( SOUND_WALLRUN, 75, math.random( 80, 120 ), 0.1 )
 						end
 						ply.OnWall = true
 					end

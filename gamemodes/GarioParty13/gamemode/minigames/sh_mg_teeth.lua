@@ -84,6 +84,8 @@ GM.AddGame( "Teeth", "Default", {
 			ply.BackgroundData.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
 			ply.BackgroundData.Highlight = GetColourHighlight( ply.BackgroundData.Colour )
 			GAMEMODE.Backgrounds[ply.Background].Init( ply.BackgroundData )
+
+			Music:Play( MUSIC_TRACK_TEETH )
 		end
 
 		-- TODO TEMP REMOVE
@@ -237,6 +239,8 @@ GM.AddGame( "Teeth", "Default", {
 			self:RemoveRagdoll()
 
 			gui.EnableScreenClicker( false )
+
+			Music:Pause( MUSIC_TRACK_TEETH )
 		end
 	end,
 

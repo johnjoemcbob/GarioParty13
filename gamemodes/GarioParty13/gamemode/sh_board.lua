@@ -128,7 +128,7 @@ function Board:AddSpace( x, y, type, connections )
 	end
 
 	Board.Data[x][y].CurrentPlayers = {}
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			if ( ply:GetNWVector( "BoardPos", Vector( 1, 1 ) ) == Vector( x, y ) ) then
 				table.insert( Board.Data[x][y].CurrentPlayers, ply )
 			end
@@ -197,77 +197,80 @@ end
 
 if ( CLIENT ) then
 	hook.Add( "Tick", HOOK_PREFIX .. "Tick", function()
-		for k, ply in pairs( player.GetAll() ) do
-			-- Create player avatar
-			if ( !ply.BoardModel or !ply.BoardModel:IsValid() ) then
-				local pos = GP13_BOARD_POS
-				local ang = Angle( 0, 0, 0 )
-				ply.BoardModel = GAMEMODE.AddAnim( ply:GetModel(), "run_all_01", pos, ang, 1 )
+		if ( GAMEMODE:GetStateName() == STATE_BOARD ) then
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+				-- Create player avatar
+				if ( !ply.BoardModel or !ply.BoardModel:IsValid() ) then
+					local pos = GP13_BOARD_POS
+					local ang = Angle( 0, 0, 0 )
+					ply.BoardModel = GAMEMODE.AddAnim( ply:GetModel(), "run_all_01", pos, ang, 1 )
+				end
+
+				-- Target position and angle
+				local pos, ang
+
+				-- Move
+				if ( ply.BoardFromPos != ply.BoardTargetPos ) then
+					-- Time progress
+					local progress = math.Clamp( ( CurTime() - Board.MoveStart ) / BOARD_MOVETIME, 0, 1 )
+					if ( progress == 1 ) then
+						ply.BoardFromPos = ply.BoardTargetPos
+						LocalPlayer():EmitSound( SOUND_BOARD_MOVE[math.random( 1, #SOUND_BOARD_MOVE )] )
+						
+					end
+
+					pos = ply.BoardFromExact
+					local targetpos = Board:GetTargetPos( ply )
+					pos = LerpVector( progress, pos, targetpos )
+					local target  = ( targetpos - pos ):Angle()
+						target.p = 0
+						target.r = 0
+					ply.BoardModel.Angle = ply.BoardModel.Angle or target
+					ply.BoardModel.Angle = LerpAngle( FrameTime() * LERPSPEED_ANGLE, ply.BoardModel.Angle, target )
+					ang = ply.BoardModel.Angle
+
+					-- Loop run animation
+					if ( ply.BoardModel.NextPlay <= CurTime() ) then
+						ply.BoardModel:ResetSequence( "swimming_all" )
+						--ply.BoardModel:ResetSequence( "walk_suitcase" )
+						--ply.BoardModel:ResetSequence( "sit" )
+						ply.BoardModel.Delay = ply.BoardModel:SequenceDuration()
+						ply.BoardModel.NextPlay = CurTime() + ply.BoardModel.Delay
+					end
+
+					-- Sounds
+					-- ply.BoardModel.NextAudio = ply.BoardModel.NextAudio or 0
+					-- if ( ply.BoardModel.NextAudio <= CurTime() ) then
+					-- 	LocalPlayer():EmitSound( SOUND_BOARD_MOVE[math.random( 1, #SOUND_BOARD_MOVE )] )
+					-- 	ply.BoardModel.NextAudio = CurTime() + 0.4
+					-- end
+				else
+					if ( ply.BoardModel.NextPlay <= CurTime() ) then
+						-- Loop idle animation
+						ply.BoardModel:ResetSequence( "idle_all_01" )
+						--ply.BoardModel:ResetSequence( "man_gun" )
+						ply.BoardModel.Delay = ply.BoardModel:SequenceDuration()
+						ply.BoardModel.NextPlay = CurTime() + ply.BoardModel.Delay
+					end
+
+					-- Still lerp in case needs to get out of way of moving player
+					pos = ply.BoardModel:GetPos()
+					local targetpos = Board:GetTargetPos( ply )
+					pos = LerpVector( FrameTime() * 5, pos, targetpos )
+
+					-- Face camera
+					ang = Angle( 0, 180, 0 )
+				end
+
+				-- Update transform
+				ply.BoardModel:SetPos( pos )
+				ply.BoardModel:SetAngles( ang )
+
+				-- Animate
+				--ply.BoardModel:SetCycle( math.sin( CurTime() * 10 ) + 1 )
+				ply.BoardModel:FrameAdvance()
+				--ply.BoardModel:SetAutomaticFrameAdvance( true )
 			end
-
-			-- Target position and angle
-			local pos, ang
-
-			-- Move
-			if ( ply.BoardFromPos != ply.BoardTargetPos ) then
-				-- Time progress
-				local progress = math.Clamp( ( CurTime() - Board.MoveStart ) / BOARD_MOVETIME, 0, 1 )
-				if ( progress == 1 ) then
-					ply.BoardFromPos = ply.BoardTargetPos
-					LocalPlayer():EmitSound( SOUND_BOARD_MOVE[math.random( 1, #SOUND_BOARD_MOVE )] )
-					
-				end
-
-				pos = ply.BoardFromExact
-				local targetpos = Board:GetTargetPos( ply )
-				pos = LerpVector( progress, pos, targetpos )
-				local target  = ( targetpos - pos ):Angle()
-					target.p = 0
-					target.r = 0
-				ply.BoardModel.Angle = ply.BoardModel.Angle or target
-				ply.BoardModel.Angle = LerpAngle( FrameTime() * LERPSPEED_ANGLE, ply.BoardModel.Angle, target )
-				ang = ply.BoardModel.Angle
-
-				-- Loop run animation
-				if ( ply.BoardModel.NextPlay <= CurTime() ) then
-					ply.BoardModel:ResetSequence( "swimming_all" )
-					--ply.BoardModel:ResetSequence( "sit" )
-					ply.BoardModel.Delay = ply.BoardModel:SequenceDuration()
-					ply.BoardModel.NextPlay = CurTime() + ply.BoardModel.Delay
-				end
-
-				-- Sounds
-				-- ply.BoardModel.NextAudio = ply.BoardModel.NextAudio or 0
-				-- if ( ply.BoardModel.NextAudio <= CurTime() ) then
-				-- 	LocalPlayer():EmitSound( SOUND_BOARD_MOVE[math.random( 1, #SOUND_BOARD_MOVE )] )
-				-- 	ply.BoardModel.NextAudio = CurTime() + 0.4
-				-- end
-			else
-				if ( ply.BoardModel.NextPlay <= CurTime() ) then
-					-- Loop idle animation
-					ply.BoardModel:ResetSequence( "idle_all_01" )
-					--ply.BoardModel:ResetSequence( "man_gun" )
-					ply.BoardModel.Delay = ply.BoardModel:SequenceDuration()
-					ply.BoardModel.NextPlay = CurTime() + ply.BoardModel.Delay
-				end
-
-				-- Still lerp in case needs to get out of way of moving player
-				pos = ply.BoardModel:GetPos()
-				local targetpos = Board:GetTargetPos( ply )
-				pos = LerpVector( FrameTime() * 5, pos, targetpos )
-
-				-- Face camera
-				ang = Angle( 0, 180, 0 )
-			end
-
-			-- Update transform
-			ply.BoardModel:SetPos( pos )
-			ply.BoardModel:SetAngles( ang )
-
-			-- Animate
-			--ply.BoardModel:SetCycle( math.sin( CurTime() * 10 ) + 1 )
-			ply.BoardModel:FrameAdvance()
-			--ply.BoardModel:SetAutomaticFrameAdvance( true )
 		end
 	end )
 
@@ -356,7 +359,7 @@ if ( CLIENT ) then
 			end
 
 			-- Player models
-			for k, ply in pairs( player.GetAll() ) do
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				if ( ply.BoardModel ) then
 					ply.BoardModel:DrawModel()
 					

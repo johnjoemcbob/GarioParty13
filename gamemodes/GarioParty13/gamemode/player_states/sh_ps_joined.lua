@@ -7,7 +7,7 @@
 
 PLAYER_STATE_JOINED = "Joined"
 
-GM.AddPlayerState( PLAYER_STATE_JOINED, {
+AddPlayerState( PLAYER_STATE_JOINED, {
 	OnStart = function( self, ply )
 		
 	end,

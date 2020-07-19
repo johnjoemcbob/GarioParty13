@@ -227,7 +227,7 @@ if ( SERVER ) then
 
 	concommand.Add( "gp_drag", function( ply, cmd, args )
 		if ( ply:IsAdmin() ) then
-			for k, v in pairs( player.GetAll() ) do
+			for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				v:SetGame( ply:GetGameName() )
 			end
 		end

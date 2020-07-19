@@ -10,7 +10,7 @@ STATE_MINIGAME = "Minigame"
 GM.AddGameState( STATE_MINIGAME, {
 	OnStart = function( self )
 		GAMEMODE.Games[self.Minigame]:Init()
-		for k, v in pairs( player.GetAll() ) do
+		for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			v:SetGame( self.Minigame )
 		end
 	end,
@@ -18,7 +18,7 @@ GM.AddGameState( STATE_MINIGAME, {
 		
 	end,
 	OnFinish = function( self )
-		for k, v in pairs( player.GetAll() ) do
+		for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			v:SetGame( "Default" )
 		end
 		GAMEMODE.Games[self.Minigame]:Destroy()

@@ -65,11 +65,13 @@ if ( CLIENT ) then
 
 		-- Display the correct result side to all
 		Dice.Result = result
-		ply.BoardModel.Moves = result
+		if ( ply.BoardModel ) then
+			ply.BoardModel.Moves = result
 
-		-- Animate player hitting it
-		ply.BoardModel:ResetSequence( "jump_magic" )
-		ply.BoardModel.NextPlay = CurTime() + 0.3
+			-- Animate player hitting it
+			ply.BoardModel:ResetSequence( "jump_magic" )
+			ply.BoardModel.NextPlay = CurTime() + 0.3
+		end
 	end )
 
 	function Dice:RequestHit()
@@ -137,7 +139,7 @@ end )
 
 if ( CLIENT ) then
 	hook.Add( "PreDrawEffects", HOOK_PREFIX .. "PreDrawEffects", function()
-		if ( Dice.Current ) then
+		if ( Dice.Current and Dice.Current.BoardModel ) then
 			-- Render cube above player's head
 			local pos = Dice.Current.BoardModel:GetPos()
 				pos = pos + Vector( 0, 0, 120 )

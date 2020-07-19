@@ -331,6 +331,8 @@ GM.AddGame( NAME, "Default", {
 
 		if ( CLIENT ) then
 			ply.ClientAngle = Angle( 0, 0, 0 )
+
+			Music:Play( MUSIC_TRACK_SCARYGAME )
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -470,11 +472,11 @@ GM.AddGame( NAME, "Default", {
 		-- Runs on CLIENT realm!
 		-- LocalPlayer()
 
-		local size = ScrH() / ( #player.GetAll() * 4 )
+		local size = ScrH() / ( math.max( 4, #PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) * 4 )
 		local x = size * 2
 		local y = ScrH() - size * 2
 		--for ply, k in pairs( self.Players ) do
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			local txt = "" .. ply:GetNWInt( "Score", 0 )
 			local font = "DermaLarge"
 			local border = 16
@@ -730,6 +732,10 @@ GM.AddGame( NAME, "Default", {
 	PlayerLeave = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
+		
+		if ( CLIENT ) then
+			Music:Pause( MUSIC_TRACK_SCARYGAME )
+		end
 	end,
 
 	-- Custom functions

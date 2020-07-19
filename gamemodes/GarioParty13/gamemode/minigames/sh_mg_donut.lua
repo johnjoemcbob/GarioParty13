@@ -35,7 +35,7 @@ GM.AddGame( NAME, "Default", {
 					-- Find max scoring player
 					local ply = nil
 						local maxscore = -1
-						for k, v in pairs( player.GetAll() ) do
+						for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 							local score = v:GetNWInt( "Score", 0 )
 							if ( score > maxscore ) then
 								ply = v
@@ -67,8 +67,14 @@ GM.AddGame( NAME, "Default", {
 				ply.Hole:SetOwner( ply )
 			ply.Hole:Spawn()
 			timer.Simple( 0.4, function()
-				ply.Hole:SetPos( Vector( 1298, -1585, 1137 ) )
+				ply.Hole:SetPos( Vector( 1298, -1585, 1137 )
+				+ Vector( math.random( -100, 100 ), math.random( -100, 100 ), 0 )
+			)
 			end )
+		end
+
+		if ( CLIENT ) then
+			Music:Play( MUSIC_TRACK_DONUT )
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -108,11 +114,11 @@ GM.AddGame( NAME, "Default", {
 		end
 
 		-- Scores
-		local size = ScrH() / ( #player.GetAll() * 8 )
+		local size = ScrH() / ( #PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) * 8 )
 		local x = size * 2
 		local y = ScrH() - size * 2
 		--for ply, k in pairs( self.Players ) do
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			local txt = "" .. ply:GetNWInt( "Score", 0 )
 			local font = "DermaLarge"
 			local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
@@ -150,13 +156,17 @@ GM.AddGame( NAME, "Default", {
 				ply.Hole = nil
 			end
 		end
+
+		if ( CLIENT ) then
+			Music:Pause( MUSIC_TRACK_DONUT )
+		end
 	end,
 
 	-- Custom functions
 	AddWorld = function( self )
 		-- Props
 		for k, size in pairs( PROPS ) do
-			local tospawn = PROPS_NUMBER_TO_SPAWN * #player.GetAll()
+			local tospawn = PROPS_NUMBER_TO_SPAWN * #PlayerStates:GetPlayers( PLAYER_STATE_PLAY )
 				if ( k == 1 ) then
 					tospawn = tospawn * 2
 				end

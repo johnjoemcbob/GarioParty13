@@ -5,7 +5,7 @@
 -- Shared Player States
 --
 
-GM.PlayerStates = GM.PlayerStates or {}
+PlayerStates = PlayerStates or {}
 
 STATE_ERROR = "ERROR"
 
@@ -14,8 +14,8 @@ function includeanddownload()
 	local dir = "player_states/"
 	local files = {
 		"sh_ps_joined",
-		"sh_ps_board",
-		"sh_ps_minigame",
+		"sh_ps_spectate",
+		"sh_ps_play",
 	}
 	for k, file in pairs( files ) do
 		local path = dir .. file .. ".lua"
@@ -27,8 +27,8 @@ function includeanddownload()
 end
 
 -- Define add state function
-function GM.AddPlayerState( name, data )
-	GM.PlayerStates[name] = data
+function AddPlayerState( name, data )
+	PlayerStates[name] = data
 end
 
 -- Net
@@ -38,7 +38,7 @@ if ( SERVER ) then
 	util.AddNetworkString( NETSTRING )
 	util.AddNetworkString( NETSTRING_REQUEST )
 
-	function GM.BroadcastPlayerState( ply, oldstate, newstate )
+	function BroadcastPlayerState( ply, oldstate, newstate )
 		-- Communicate to client
 		net.Start( NETSTRING )
 			net.WriteEntity( ply )
@@ -61,17 +61,30 @@ if ( CLIENT ) then
 
 		-- Start/Finish clientside
 		if ( oldstate != STATE_ERROR ) then
-			GAMEMODE.PlayerStates[oldstate]:OnFinish( ply )
+			PlayerStates[oldstate]:OnFinish( ply )
 		end
-		GAMEMODE.PlayerStates[newstate]:OnStart( ply )
+		PlayerStates[newstate]:OnStart( ply )
 	end )
 
-	function GM.RequestSwitchPlayerState( state )
+	function RequestSwitchPlayerState( state )
 		-- Communicate to client
 		net.Start( NETSTRING_REQUEST )
 			net.WriteString( state )
 		net.SendToServer()
 	end
+end
+
+function PlayerStates:GetPlayers( state )
+	local tab = PlayerStates.CachedPlayers or {}
+		if ( !tab[state] ) then
+			tab[state] = {}
+			for k, v in pairs( player.GetAll() ) do
+				if ( v:GetStateName() == state ) then
+					table.insert( tab[state], v )
+				end
+			end
+		end
+	return tab[state]
 end
 
 -- Player meta functions
@@ -97,16 +110,16 @@ if ( SERVER ) then
 		end
 
 		-- Send to clients too
-		GAMEMODE.BroadcastPlayerState( self, oldstate, state )
+		BroadcastPlayerState( self, oldstate, state )
 	end
 end
 if ( CLIENT ) then
 	function meta:SwitchState( state )
-		GAMEMODE.RequestSwitchPlayerState( state )
+		RequestSwitchPlayerState( state )
 	end
 end
 function meta:GetState()
-	return GAMEMODE.PlayerStates[self:GetStateName()]
+	return PlayerStates[self:GetStateName()]
 end
 function meta:GetStateName()
 	return self:GetNWString( "PlayerState", STATE_ERROR )
@@ -142,6 +155,8 @@ hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerStates_PlayerInitialSpawn"
 end )
 
 hook.Add( "Think", HOOK_PREFIX .. "PlayerStates_Think", function()
+	PlayerStates.CachedPlayers = nil
+
 	for k, ply in pairs( player.GetAll() ) do
 		if ( ply:GetStateName() != STATE_ERROR ) then
 			ply:GetState():OnThink( ply )
@@ -152,7 +167,7 @@ end )
 -- Show current state on HUD
 -- if ( CLIENT ) then
 -- 	hook.Add( "HUDPaint", HOOK_PREFIX .. "PlayerStates_HUDPaint", function()
--- 		draw.SimpleText( LocalPlayer():GetStateName(), "DermaDefault", 50, 150, COLOUR_WHITE )
+-- 		draw.SimpleText( LocalPlayer():GetStateName(), "DermaDefault", ScrW() - 80, 150, COLOUR_WHITE )
 -- 	end )
 -- end
 

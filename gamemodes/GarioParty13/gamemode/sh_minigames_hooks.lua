@@ -30,7 +30,7 @@ hook.Add( "Think", HOOK_PREFIX .. "Think", function()
 		end
 	end
 
-	for k, ply in pairs( player.GetAll() ) do
+	for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 		if ( ply:GetGame() and ply:GetGame().PlayerThink ) then
 			ply:GetGame():PlayerThink( ply )
 		end

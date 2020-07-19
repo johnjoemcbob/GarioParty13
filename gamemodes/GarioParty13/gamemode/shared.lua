@@ -86,3 +86,12 @@ include( "sh_score.lua" )
 include( "sh_minigames.lua" )
 include( "sh_minigames_vars.lua" )
 include( "sh_minigames_hooks.lua" )
+
+local meta = FindMetaTable( "Player" )
+function meta:GetColour()
+	return GAMEMODE.ColourPalette[self:GetNWInt( "Colour", 1 )]
+end
+
+function GetLoopedColour( ind )
+	return GAMEMODE.ColourPalette[math.max( 0, math.floor( ind % #GAMEMODE.ColourPalette ) )]
+end

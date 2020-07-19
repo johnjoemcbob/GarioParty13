@@ -7,22 +7,37 @@
 
 STATE_BOARD = "Board"
 
-GP13_BOARD_CAMERA_ANGLE = 40
-GP13_BOARD_CAMERA_DISTANCE = 75
+GP13_BOARD_CAMERA_ANGLE		= 40
+GP13_BOARD_CAMERA_DISTANCE	= 75
+MAX_ROUNDS					= 15
 
 Board = Board or {}
 
 GM.AddGameState( STATE_BOARD, {
 	OnStart = function( self )
-		for k, ply in pairs( player.GetAll() ) do
+		-- Late joiners
+		for k, v in pairs( player.GetAll() ) do
+			v:SwitchState( PLAYER_STATE_PLAY )
+		end
+
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			ply:HideFPSController()
 		end
 
-		self.Round = ( self.Round or 0 ) + 1
+		self.Round = ( self.Round or 0 )
+		if ( SERVER ) then
+			self.Round = self.Round + 1
+			print( self.Round )
+			if ( self.Round == MAX_ROUNDS ) then
+				PrintMessage( HUD_PRINTCENTER, "Last Round!" )
+			end
+		end
 		Turn:Initialize()
 
 		if ( CLIENT ) then
 			Board.Scene = LoadScene( "city.json" )
+
+			Music:Play( MUSIC_TRACK_BOARD )
 		end
 	end,
 	OnThink = function( self )
@@ -33,8 +48,12 @@ GM.AddGameState( STATE_BOARD, {
 		end
 	end,
 	OnFinish = function( self )
-		for k, ply in pairs( player.GetAll() ) do
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			ply:ShowFPSController()
+		end
+
+		if ( CLIENT ) then
+			Music:Pause( MUSIC_TRACK_BOARD )
 		end
 	end,
 })
@@ -46,7 +65,7 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. STATE_BOARD .. "PostDrawOp
 		render.ClearDepth()
 
 		-- Render background scene
-		Board.Scene = LoadScene( "city.json" ) -- TODO TEMP TESTING
+		--Board.Scene = LoadScene( "city.json" ) -- TODO TEMP TESTING
 		render.SetLightingMode( 2 )
 			RenderScene( Board.Scene, GP13_BOARD_POS + Vector( 2, 3.25, 0 ) * GP13_BOARD_SCALE )
 		render.SetLightingMode( 0 )
@@ -85,5 +104,16 @@ hook.Add( "CalcView", HOOK_PREFIX .. STATE_BOARD .. "_CalcView", function( self,
 			view.fov = 90
 			view.drawviewer = true
 		return view
+	end
+end )
+
+hook.Add( "HUDPaint", HOOK_PREFIX .. STATE_BOARD .. "_HUDPaint", function()
+	if ( GAMEMODE:GetStateName() == STATE_BOARD ) then
+		local x = ScrW() / 2
+		local y = ScrH() / 32
+		local w = ScrW() / 8
+		local h = ScrH() / 16
+		draw.RoundedBox( 4, x - w / 2, y - h / 2, w, h, COLOUR_WHITE )
+		draw.SimpleText( "Round " .. GAMEMODE.GameStates[STATE_BOARD].Round, "CloseCaption_BoldItalic", x, y, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 	end
 end )

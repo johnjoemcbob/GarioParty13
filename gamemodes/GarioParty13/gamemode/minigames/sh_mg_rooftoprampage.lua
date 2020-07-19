@@ -77,6 +77,10 @@ GM.AddGame( NAME, "Goose", {
 
 			ply.CurrentModel = self["MODEL_GOOSE"]
 		end
+
+		if ( CLIENT ) then
+			Music:Play( MUSIC_TRACK_ROOFTOP )
+		end
 	end,
 	PlayerSpawn = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -201,7 +205,7 @@ GM.AddGame( NAME, "Goose", {
 		-- Runs on CLIENT realm!
 		-- LocalPlayer()
 
-		local size = ScrH() / ( #player.GetAll() * 4 )
+		local size = ScrH() / ( #PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) * 4 )
 		local x = size * 2
 		local y = ScrH() - size * 2
 		for ply, k in pairs( self.Players ) do
@@ -286,6 +290,8 @@ GM.AddGame( NAME, "Goose", {
 
 		if ( CLIENT ) then
 			self:RemoveRagdoll( ply )
+
+			Music:Pause( MUSIC_TRACK_ROOFTOP )
 		end
 		if ( SERVER ) then
 			ply:SetColor( Color( 255, 255, 255, 255 ) )
