@@ -5,7 +5,8 @@
 -- Game: Teeth
 --
 
-MODEL_TOOTHBRUSH = "models/props_c17/TrapPropeller_Lever.mdl"
+MODEL_TOOTHBRUSH			= "models/props_c17/TrapPropeller_Lever.mdl"
+MODEL_TOOTHBRUSH_BRISTLES	= "models/hunter/blocks/cube025x025x025.mdl"
 
 local POS = Vector( 0, 0, 0 )
 local HEIGHT = Vector( 0, 0, 63.7 )
@@ -77,15 +78,17 @@ GM.AddGame( "Teeth", "Default", {
 		self.base:PlayerJoin( ply )
 
 		if ( CLIENT ) then
-			gui.EnableScreenClicker( true )
+			if ( ply == LocalPlayer() ) then
+				gui.EnableScreenClicker( true )
 
-			ply.Background = math.random( 1, #GAMEMODE.Backgrounds )
-			ply.BackgroundData = {}
-			ply.BackgroundData.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
-			ply.BackgroundData.Highlight = GetColourHighlight( ply.BackgroundData.Colour )
-			GAMEMODE.Backgrounds[ply.Background].Init( ply.BackgroundData )
+				ply.Background = math.random( 1, #GAMEMODE.Backgrounds )
+				ply.BackgroundData = {}
+				ply.BackgroundData.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
+				ply.BackgroundData.Highlight = GetColourHighlight( ply.BackgroundData.Colour )
+				GAMEMODE.Backgrounds[ply.Background].Init( ply.BackgroundData )
 
-			Music:Play( MUSIC_TRACK_TEETH )
+				Music:Play( MUSIC_TRACK_TEETH )
+			end
 		end
 
 		-- TODO TEMP REMOVE
@@ -124,6 +127,8 @@ GM.AddGame( "Teeth", "Default", {
 		-- ply
 	end,
 	PostDrawTranslucentRenderables = function( self )
+	end,
+	PreDrawTranslucentRenderables = function( self )
 		if ( !LocalPlayer().BackgroundData ) then return end
 
 		local pos = LocalPlayer():GetPos()
@@ -132,10 +137,11 @@ GM.AddGame( "Teeth", "Default", {
 		-- Background
 		local w, h = ScrW(), ScrH()
 		local scale = 0.4
-		local ang = Angle( 0, 0, 0 )
+		local ang = Angle( 0, 90, 90 )
 		local off = Vector( 0, -w / 2, h / 2 ) * scale
 		local behind = Vector( -10, 0, 0 )
-		cam.Start3D2D( pos + off + behind, Angle( 0, 90, 90 ), scale )
+		cam.Start3D2D( pos + off + behind, ang, scale )
+			draw.NoTexture()
 			surface.SetDrawColor( LocalPlayer().BackgroundData.Colour )
 			surface.DrawRect( 0, 0, w, h )
 			GAMEMODE.Backgrounds[LocalPlayer().Background].Render( LocalPlayer().BackgroundData, w, h )
@@ -169,8 +175,22 @@ GM.AddGame( "Teeth", "Default", {
 		GAMEMODE.RenderCachedModel(
 			MODEL_TOOTHBRUSH,
 			pos, ang,
-			Vector( 1, right, 1 ) * scale
+			Vector( 1, right, 1 ) * scale,
+			"models/debug/debugwhite",
+			LocalPlayer():GetColour()
 		)
+		GAMEMODE.RenderCachedModel(
+			MODEL_TOOTHBRUSH_BRISTLES,
+			pos + ang:Right() * -1.2 + ang:Forward() * -0.2, ang,
+			Vector( 1, 2, 0.6 ) * 0.04,
+			"models/debug/debugwhite",
+			COLOUR_WHITE
+		)
+		if ( input.IsMouseDown( MOUSE_FIRST ) ) then
+			local effectdata = EffectData()
+				effectdata:SetOrigin( pos + ang:Right() * -1.5 + ang:Forward() * -0.2 )
+			util.Effect( "gp13_tooth", effectdata )
+		end
 
 		-- Draw aaa
 		local progress = CurTime() % 2 / 2
@@ -196,6 +216,8 @@ GM.AddGame( "Teeth", "Default", {
 				x = x + surface.GetTextSize( str )
 			end
 		cam.End3D2D()
+
+		return true
 	end,
 	PrePlayerDraw = function( self, ply )
 		-- Runs on CLIENT realm!
@@ -238,9 +260,11 @@ GM.AddGame( "Teeth", "Default", {
 			self:CloseMouth()
 			self:RemoveRagdoll()
 
-			gui.EnableScreenClicker( false )
+			if ( ply == LocalPlayer() ) then
+				gui.EnableScreenClicker( false )
 
-			Music:Pause( MUSIC_TRACK_TEETH )
+				Music:Pause( MUSIC_TRACK_TEETH )
+			end
 		end
 	end,
 
@@ -370,6 +394,11 @@ GM.AddGame( "Teeth", "Default", {
 				if ( dist < 10 ) then
 					self.PatientRagdoll:StopSound( Sound_Brush_Teeth )
 					self.PatientRagdoll:EmitSound( Sound_Brush_Teeth, 75, 100, 1 )
+
+					local effectdata = EffectData()
+						effectdata:SetOrigin( pos )
+					util.Effect( "gp13_tooth", effectdata )
+
 					self.Gunks[k] = false
 					self:CheckClean()
 				end

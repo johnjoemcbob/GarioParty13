@@ -129,6 +129,19 @@ function ENT:Think()
 				local scale = self.Size
 				self:Resize( Vector( scale, scale, 1 ) )
 
+				GAMEMODE.EmitChainPitchedSound(
+					"FlyHigh",
+					self.Owner,
+					Sound_OrchestraHit,
+					75,
+					0.2,
+					100,
+					20,
+					5,
+					0,
+					20
+				)
+
 				self.Owner:SetNWInt( "Score", self.Owner:GetNWInt( "Score", 0 ) + 1 )
 			else
 				-- ent:SetPos( ent:GetPos() + down * removeforce )

@@ -37,6 +37,10 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 				GAMEMODE:SwitchState( STATE_BOARD )
 			end
 		end )
+
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+			ply:HideFPSController()
+		end
 	end,
 	OnThink = function( self )
 		if ( CLIENT ) then
@@ -56,6 +60,10 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 				ply.LastProps = ply:GetScore()
 			end
 		end
+
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+			ply:ShowFPSController()
+		end
 	end,
 })
 
@@ -74,6 +82,7 @@ if ( CLIENT ) then
 			GAMEMODE.Backgrounds[self.Panel.Background].Init( self.Panel )
 		function self.Panel:Paint( w, h )
 			-- Draw background blue
+			draw.NoTexture()
 			surface.SetDrawColor( self.Colour )
 			surface.DrawRect( 0, 0, w, h )
 

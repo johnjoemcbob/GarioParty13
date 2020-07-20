@@ -64,7 +64,9 @@ GM.AddGame( "Screencheat", "Default", {
 				["$vertexcolor"] = 1
 			} )
 
-			Music:Play( MUSIC_TRACK_SCREENCHEAT )
+			if ( ply == LocalPlayer() ) then
+				Music:Play( MUSIC_TRACK_SCREENCHEAT )
+			end
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -121,7 +123,7 @@ GM.AddGame( "Screencheat", "Default", {
 				attacker,
 				Sound_OrchestraHit,
 				75,
-				1,
+				0.5,
 				100,
 				20,
 				5,
@@ -267,7 +269,9 @@ GM.AddGame( "Screencheat", "Default", {
 				ply:SetNoDraw( false )
 			end
 
-			Music:Pause( MUSIC_TRACK_SCREENCHEAT )
+			if ( ply == LocalPlayer() ) then
+				Music:Pause( MUSIC_TRACK_SCREENCHEAT )
+			end
 		end
 	end,
 

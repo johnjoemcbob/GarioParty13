@@ -132,10 +132,10 @@ end
 GM.AddGame( NAME, "Default", {
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
-	TagLine = "",
-	Instructions = "",
-	Controls = "Right click to time travel!",
-	GIF = "https://i.imgur.com/6oIr4ew.gif",
+	TagLine = "Thanks Anderson!",
+	Instructions = "Kill the other time travellers to win!",
+	Controls = "Secondary fire to time travel!\nPrimary fire to shoot\nRun at walls to wall run",
+	GIF = "https://i.imgur.com/f71CPHF.gif",
 	World = {},
 
 	SetupDataTables = function( self )
@@ -199,7 +199,9 @@ GM.AddGame( NAME, "Default", {
 			self:TimeTravel( ply )
 		end
 		if ( CLIENT ) then
-			Music:Play( MUSIC_TRACK_TIMETRAVEL )
+			if ( ply == LocalPlayer() ) then
+				Music:Play( MUSIC_TRACK_TIMETRAVEL )
+			end
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -289,7 +291,7 @@ GM.AddGame( NAME, "Default", {
 				attacker,
 				Sound_OrchestraHit,
 				75,
-				1,
+				0.5,
 				100,
 				20,
 				5,
@@ -406,15 +408,17 @@ GM.AddGame( NAME, "Default", {
 	PlayerLeave = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
-
 		if ( SERVER ) then
-			if ( ply.WallLoopSound ) then
-				ply:StopLoopingSound( ply.WallLoopSound )
-				ply.WallLoopSound = nil
-			end
+			-- if ( ply.WallLoopSound ) then
+			-- 	ply:StopLoopingSound( ply.WallLoopSound )
+			-- 	ply.WallLoopSound = nil
+			-- end
+			ply:StopSound( SOUND_WALLRUN )
 		end
 		if ( CLIENT ) then
-			Music:Pause( MUSIC_TRACK_TIMETRAVEL )
+			if ( ply == LocalPlayer() ) then
+				Music:Pause( MUSIC_TRACK_TIMETRAVEL )
+			end
 		end
 	end,
 	SetupMove = function( self, ply, mv )
@@ -738,7 +742,8 @@ GM.AddGame( NAME, "Default", {
 							end
 							ply.WallRunFloor.z = pos.z
 
-							ply.WallLoopSound = ply:StartLoopingSound( SOUND_WALLRUN, 75, math.random( 80, 120 ), 0.1 )
+							--ply.WallLoopSound = ply:StartLoopingSound( SOUND_WALLRUN )
+							ply:EmitSound( SOUND_WALLRUN, 75, math.random( 80, 120 ), 0.2 )
 						end
 						ply.OnWall = true
 					end
@@ -762,10 +767,11 @@ GM.AddGame( NAME, "Default", {
 				if ( ply.WallRunFloor and ply.WallRunFloor:IsValid() ) then
 					ply.WallRunFloor:SetPos( Vector( 0, 0, 0 ) )
 				end
-				if ( ply.WallLoopSound ) then
-					ply:StopLoopingSound( ply.WallLoopSound )
-					ply.WallLoopSound = nil
-				end
+				-- if ( ply.WallLoopSound ) then
+				-- 	ply:StopLoopingSound( ply.WallLoopSound )
+				-- 	ply.WallLoopSound = nil
+				-- end
+				ply:StopSound( SOUND_WALLRUN )
 			end
 			ply.OnWall = false
 		end

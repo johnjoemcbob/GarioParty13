@@ -303,6 +303,8 @@ if ( CLIENT ) then
 	end
 
 	function Board:Move( ply, pos )
+		if ( !ply or !ply.BoardModel ) then return end
+
 		-- Unregister from old space
 		if ( ply.BoardTargetPos ) then
 			table.RemoveByValue( self.Data[ply.BoardTargetPos.x][ply.BoardTargetPos.y].CurrentPlayers, ply )

@@ -80,18 +80,18 @@ end
 
 local meta_ply = FindMetaTable( "Player" )
 function meta_ply:SetGame( game )
-	if ( game != "Default" ) then
-		if ( !GAMEMODE.GamesInited ) then
-			-- Try a late init AGAIN
-			for k, igame in pairs( GAMEMODE.Games ) do
-				if ( igame.SetupDataTables ) then
-					igame:SetupDataTables()
-				end
-				igame:Init()
-			end
-			GAMEMODE.GamesInited = true
-		end
-	end
+	-- if ( game != "Default" ) then
+	-- 	if ( !GAMEMODE.GamesInited ) then
+	-- 		-- Try a late init AGAIN
+	-- 		for k, igame in pairs( GAMEMODE.Games ) do
+	-- 			if ( igame.SetupDataTables ) then
+	-- 				igame:SetupDataTables()
+	-- 			end
+	-- 			igame:Init()
+	-- 		end
+	-- 		GAMEMODE.GamesInited = true
+	-- 	end
+	-- end
 
 	-- Leave old
 	local old = self:GetGame()
@@ -103,6 +103,7 @@ function meta_ply:SetGame( game )
 
 	-- Update var
 	self:SetNWString( HOOK_PREFIX .. "Game", game )
+	--self.CurrentMinigame = game
 	if ( SERVER ) then
 		ConfirmGameChange( self, game )
 	end
@@ -134,6 +135,7 @@ end
 
 function meta_ply:GetGameName()
 	local game = self:GetNWString( HOOK_PREFIX .. "Game", "" )
+	--local game = self.CurrentMinigame
 		if ( game == "" ) then
 			game = nil
 		end
@@ -256,8 +258,8 @@ if ( CLIENT ) then
 		if ( ply == nil or !ply:IsValid() ) then
 			-- Wait for server on first load/join
 			timer.Simple( 3, function()
-				if ( LocalPlayer().SetGame ) then
-					LocalPlayer():SetGame( gamename )
+				if ( ply.SetGame ) then
+					ply:SetGame( gamename )
 				end
 			end )
 		else

@@ -332,7 +332,9 @@ GM.AddGame( NAME, "Default", {
 		if ( CLIENT ) then
 			ply.ClientAngle = Angle( 0, 0, 0 )
 
-			Music:Play( MUSIC_TRACK_SCARYGAME )
+			if ( ply == LocalPlayer() ) then
+				Music:Play( MUSIC_TRACK_SCARYGAME )
+			end
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -734,7 +736,9 @@ GM.AddGame( NAME, "Default", {
 		-- ply
 		
 		if ( CLIENT ) then
-			Music:Pause( MUSIC_TRACK_SCARYGAME )
+			if ( ply == LocalPlayer() ) then
+				Music:Pause( MUSIC_TRACK_SCARYGAME )
+			end
 		end
 	end,
 

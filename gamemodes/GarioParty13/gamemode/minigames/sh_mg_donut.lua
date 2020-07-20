@@ -19,7 +19,10 @@ local NAME = "Donut County"
 GM.AddGame( NAME, "Default", {
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
+	TagLine = "Shluuuuurp",
 	Instructions = "Move around and drop things into your hole to grow!",
+	Controls = "Movement keys to.. move!",
+	GIF = "https://i.imgur.com/coUppee.gif",
 	World = {},
 
 	Init = function( self )
@@ -30,21 +33,21 @@ GM.AddGame( NAME, "Default", {
 			self:RemoveWorld()
 			self:AddWorld()
 
-			timer.Simple( DONUT_TIMELIMIT, function()
-				if ( GAMEMODE:GetStateName() == STATE_MINIGAME and GAMEMODE.GameStates[STATE_MINIGAME].Minigame == NAME ) then
-					-- Find max scoring player
-					local ply = nil
-						local maxscore = -1
-						for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
-							local score = v:GetNWInt( "Score", 0 )
-							if ( score > maxscore ) then
-								ply = v
-								maxscore = score
-							end
-						end
-					self:Win( ply )
-				end
-			end )
+			-- timer.Simple( DONUT_TIMELIMIT, function()
+			-- 	if ( GAMEMODE:GetStateName() == STATE_MINIGAME and GAMEMODE.GameStates[STATE_MINIGAME].Minigame == NAME ) then
+			-- 		-- Find max scoring player
+			-- 		local ply = nil
+			-- 			local maxscore = -1
+			-- 			for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+			-- 				local score = v:GetNWInt( "Score", 0 )
+			-- 				if ( score > maxscore ) then
+			-- 					ply = v
+			-- 					maxscore = score
+			-- 				end
+			-- 			end
+			-- 		self:Win( ply )
+			-- 	end
+			-- end )
 		end
 
 		self.StartTime = CurTime()
@@ -74,7 +77,20 @@ GM.AddGame( NAME, "Default", {
 		end
 
 		if ( CLIENT ) then
-			Music:Play( MUSIC_TRACK_DONUT )
+			if ( ply == LocalPlayer() ) then
+				timer.Simple( 0.4, function()
+					local ent = nil
+						for k, v in pairs( ents.FindByClass( "gp13_donuthole" ) ) do
+							print( v:GetOwner() )
+							if ( v:GetOwner() == LocalPlayer() ) then
+								ent = v
+								break
+							end
+						end
+					LocalPlayer().Donut = ent
+					Music:Play( MUSIC_TRACK_DONUT, LocalPlayer().Donut )
+				end )
+			end
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -84,6 +100,22 @@ GM.AddGame( NAME, "Default", {
 	Think = function( self )
 		-- Runs on CLIENT and SERVER realms!
 		-- Each update tick for this game, no reference to any player
+
+		if ( self.StartTime + DONUT_TIMELIMIT <= CurTime() ) then
+			if ( GAMEMODE:GetStateName() == STATE_MINIGAME and GAMEMODE.GameStates[STATE_MINIGAME].Minigame == NAME ) then
+				-- Find max scoring player
+				local ply = nil
+					local maxscore = -1
+					for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+						local score = v:GetNWInt( "Score", 0 )
+						if ( score > maxscore ) then
+							ply = v
+							maxscore = score
+						end
+					end
+				self:Win( ply )
+			end
+		end
 	end,
 	PlayerThink = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -150,15 +182,17 @@ GM.AddGame( NAME, "Default", {
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
 
+		if ( CLIENT ) then
+			if ( ply == LocalPlayer() ) then
+				Music:Pause( MUSIC_TRACK_DONUT, ply.Donut )
+			end
+		end
+
 		if ( SERVER ) then
 			if ( ply.Hole != nil ) then
 				ply.Hole:Remove()
 				ply.Hole = nil
 			end
-		end
-
-		if ( CLIENT ) then
-			Music:Pause( MUSIC_TRACK_DONUT )
 		end
 	end,
 

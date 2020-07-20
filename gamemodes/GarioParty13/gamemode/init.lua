@@ -41,12 +41,25 @@ function GM:Initialize()
 end
 
 function GM:InitPostEntity()
-	
+	-- Force construct
+	if ( game.GetMap() != "gm_construct" ) then
+		local msg = "WRONG MAP - SWITCHING"
+		print( msg )
+		PrintMessage( HUD_PRINTCENTER, msg )
+		--timer.Simple( 1, function()
+			RunConsoleCommand( "changelevel", "gm_construct" )
+		--end )
+		return
+	end
 end
 
 hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerInitialSpawn", function( ply )
 	ply.InitialFOV = ply:GetFOV()
 	ply:SetNWInt( "Colour", math.min( #player.GetAll(), #GAMEMODE.ColourPalette ) )
+
+	if ( !GAMEMODE.DERIVE_SANDBOX ) then
+		ply:SetModel( PLAYERMODELS[math.random( 1, #PLAYERMODELS )] )
+	end
 end )
 
 hook.Add( "PlayerSpawn", HOOK_PREFIX .. "PlayerSpawn", function( ply )
@@ -57,10 +70,6 @@ hook.Add( "PlayerSpawn", HOOK_PREFIX .. "PlayerSpawn", function( ply )
 end )
 
 function GM:Think()
-	
-end
-
-function GM:HandlePlayerJumping( ply, vel )
 	
 end
 

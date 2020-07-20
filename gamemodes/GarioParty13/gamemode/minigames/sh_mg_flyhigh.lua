@@ -9,9 +9,15 @@ local SPEEDS = { 1, 1 }
 
 local MODEL
 
-GM.AddGame( "Fly High", "Default", {
+local FLYHIGH_TIMELIMIT	= 40
+
+local NAME = "Fly High"
+GM.AddGame( NAME, "Default", {
 	Author = "johnjoemcbob",
-	Instructions = "Swim around to gain speed!\nJump out of the water, highest reach wins!",
+	TagLine = "High Fly",
+	Instructions = "Highest jump wins!\nEach high jump increases your max speed",
+	Controls = "Swim around to gain speed!\nJump out of the water to gain points",
+	GIF = "https://i.imgur.com/Uhg9L3R.gif",
 	Colour = Color( 100, 150, 255, 255 ),
 
 	SetupDataTables = function( self )
@@ -36,16 +42,42 @@ GM.AddGame( "Fly High", "Default", {
 	end,
 	Init = function( self )
 		-- Runs on CLIENT and SERVER realms!
+		
+		-- if ( SERVER ) then
+		-- 	timer.Simple( FLYHIGH_TIMELIMIT, function()
+		-- 		if ( GAMEMODE:GetStateName() == STATE_MINIGAME and GAMEMODE.GameStates[STATE_MINIGAME].Minigame == NAME ) then
+		-- 			-- Find max scoring player
+		-- 			local ply = nil
+		-- 				local maxscore = -1
+		-- 				for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+		-- 					local score = v:GetNWInt( "Score", 0 )
+		-- 					if ( score > maxscore ) then
+		-- 						ply = v
+		-- 						maxscore = score
+		-- 					end
+		-- 				end
+		-- 			self:Win( ply )
+		-- 		end
+		-- 	end )
+		-- end
+
+		self.StartTime = CurTime()
+	end,
+	Destroy = function( self )
 	end,
 	PlayerJoin = function( self, ply )
 		if ( CLIENT ) then
 			ply.FlyHigh_FishAngle = Angle( 0, 0, 0 )
+
+			if ( ply == LocalPlayer() ) then
+				Music:Play( MUSIC_TRACK_FLYHIGH )
+			end
 		end
 		if ( SERVER ) then
 			ply:SetJumpPower( 0 )
 
 			-- Networked variables
-			ply:SetNWFloat( "MaxHeight", ply:GetNWFloat( "MaxHeight", 0 ) )
+			ply:SetNWFloat( "Score", ply:GetNWFloat( "Score", 0 ) )
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -62,17 +94,29 @@ GM.AddGame( "Fly High", "Default", {
 		end
 	end,
 	Think = function( self )
-		
+		if ( self.StartTime + FLYHIGH_TIMELIMIT <= CurTime() ) then
+			-- Find max scoring player
+			local ply = nil
+				local maxscore = -1
+				for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+					local score = v:GetNWInt( "Score", 0 )
+					if ( score > maxscore ) then
+						ply = v
+						maxscore = score
+					end
+				end
+			self:Win( ply )
+		end
 	end,
 	PlayerThink = function( self, ply )
 		if ( CLIENT ) then
-			if ( ply:Alive() and ply:GetNWFloat( "MaxHeight" ) <= ply:GetPos().z ) then
+			if ( ply:Alive() and ply:GetNWFloat( "Score" ) <= ply:GetPos().z ) then
 				GAMEMODE.EmitChainPitchedSound(
 					"FlyHigh",
 					ply,
 					Sound_OrchestraHit,
 					75,
-					0.2,
+					0.5,
 					100,
 					20,
 					5,
@@ -119,8 +163,8 @@ GM.AddGame( "Fly High", "Default", {
 			else
 				-- If out of water, start tracking maximum height
 				if ( ply:Alive() and ply.FlyHighState != "Ground" ) then
-					local maxheight = math.max( ply:GetNWFloat( "MaxHeight" ), ply:GetPos().z )
-					ply:SetNWFloat( "MaxHeight", maxheight )
+					local maxheight = math.max( ply:GetNWFloat( "Score" ), ply:GetPos().z )
+					ply:SetNWFloat( "Score", maxheight )
 				end
 
 				-- Suffocate if running on land
@@ -141,10 +185,29 @@ GM.AddGame( "Fly High", "Default", {
 		end
 	end,
 	PlayerDeath = function( self, victim, inflictor, attacker )
-		victim:SetNWFloat( "MaxHeight", 0 )
+		victim:SetNWFloat( "Score", 0 )
 		victim:SetNWFloat( "MaxSpeed", 0 )
 	end,
 	HUDPaint = function( self )
+		-- Timer
+		local colour = GAMEMODE.ColourPalette[LocalPlayer():GetNWInt( "Colour" )]
+		local font = "DermaLarge"
+		local width = ScrW() / 4
+		local height = ScrH() / 16
+		local x = ScrW() / 2
+		local y = height
+		local border = height / 8
+		local elapsed = ( CurTime() - self.StartTime )
+		local time = FLYHIGH_TIMELIMIT - elapsed
+		local percent = time / FLYHIGH_TIMELIMIT
+		if ( time >= 0 ) then
+			surface.SetDrawColor( COLOUR_BLACK )
+			surface.DrawRect( x - width / 2, y - height / 2, width, height )
+			surface.SetDrawColor( colour )
+			surface.DrawRect( x - width / 2, y - height / 2, width * percent, height )
+			draw.SimpleText( math.ceil( time ), font, x, y, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+		end
+
 		-- Speed bar
 		local maxspeed = LocalPlayer():GetNWFloat( "MaxSpeed", self["SPEED_STARTMAX"] )
 		local x = ScrW() / 2
@@ -178,7 +241,7 @@ GM.AddGame( "Fly High", "Default", {
 			local border = 12
 
 			-- Draw max height
-			local val = math.ceil( ply:GetNWFloat( "MaxHeight" ) )
+			local val = math.ceil( ply:GetNWFloat( "Score" ) )
 			local y = gety( val )
 			local txt = val .. " - " .. name
 			local font = "DermaDefault"
@@ -204,7 +267,7 @@ GM.AddGame( "Fly High", "Default", {
 		end
 	end,
 	Scoreboard = function( self, ply, row )
-		local game = Label( math.ceil( ply:GetNWFloat( "MaxHeight" ) ), row )
+		local game = Label( math.ceil( ply:GetNWFloat( "Score" ) ), row )
 		game:SetTextColor( Color( 0, 0, 255, 255 ) )
 		game:Dock( LEFT )
 	end,
@@ -252,7 +315,11 @@ GM.AddGame( "Fly High", "Default", {
 		return view
 	end,
 	PlayerLeave = function( self, ply )
-		
+		if ( CLIENT ) then
+			if ( ply == LocalPlayer() ) then
+				Music:Pause( MUSIC_TRACK_FLYHIGH )
+			end
+		end
 	end,
 
 	-- Custom functions

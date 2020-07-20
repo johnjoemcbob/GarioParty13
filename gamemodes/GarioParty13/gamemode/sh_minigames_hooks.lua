@@ -157,6 +157,13 @@ if ( CLIENT ) then
 		end
 	end )
 
+	hook.Add( "PreDrawTranslucentRenderables", HOOK_PREFIX .. "PreDrawTranslucentRenderables", function( depth, skybox )
+		local game = LocalPlayer():GetGame()
+		if ( game and game.PreDrawTranslucentRenderables ) then
+			return game:PreDrawTranslucentRenderables( depth, skybox )
+		end
+	end )
+
 	hook.Add( "PostDrawTranslucentRenderables", HOOK_PREFIX .. "PostDrawTranslucentRenderables", function( depth, skybox )
 		local game = LocalPlayer():GetGame()
 		if ( game and game.PostDrawTranslucentRenderables ) then

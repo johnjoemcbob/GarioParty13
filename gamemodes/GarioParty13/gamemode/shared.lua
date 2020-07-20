@@ -11,7 +11,7 @@ GM.Email = ""
 GM.Website = ""
 
 -- Base Game
-GM.DERIVE_SANDBOX = true
+GM.DERIVE_SANDBOX = false
 if GM.DERIVE_SANDBOX then
 	DeriveGamemode( "Sandbox" ) -- For testing purposes, nice to have spawn menu etc
 else
@@ -54,6 +54,37 @@ GM.ColourPalette				= {
 	Color( 225, 112, 85, 255 ),
 	Color( 214, 48, 49, 255 ),
 	Color( 232, 67, 147, 255 ),
+}
+
+PLAYERMODELS = {
+	"models/player/alyx.mdl",
+	"models/player/breen.mdl",
+	"models/player/barney.mdl",
+	"models/player/monk.mdl",
+	"models/player/kleiner.mdl",
+	"models/player/gman_high.mdl",
+	"models/player/mossman.mdl",
+	"models/player/eli.mdl",
+
+	"models/player/group01/female_01.mdl",
+	"models/player/group01/female_02.mdl",
+	"models/player/group01/female_03.mdl",
+	"models/player/group01/female_04.mdl",
+	"models/player/group01/female_05.mdl",
+	"models/player/group01/female_06.mdl",
+	"models/player/group01/female_01.mdl",
+	"models/player/group01/female_02.mdl",
+	"models/player/group01/female_03.mdl",
+	"models/player/group01/female_04.mdl",
+	"models/player/group01/female_05.mdl",
+	"models/player/group01/female_06.mdl",
+
+	"models/player/group01/male_01.mdl",
+	"models/player/group01/male_02.mdl",
+	"models/player/group01/male_03.mdl",
+	"models/player/group01/male_04.mdl",
+	"models/player/group01/male_05.mdl",
+	"models/player/group01/male_06.mdl",
 }
 
 -- Net Strings

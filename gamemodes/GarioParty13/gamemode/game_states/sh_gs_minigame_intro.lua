@@ -42,6 +42,8 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 					"Rooftop Rampage",
 					"Time Travel",
 					"Donut County",
+					"Fly High",
+					"Boats",
 				}
 			end
 			local ind = math.random( 1, #game_pool )
@@ -290,6 +292,7 @@ if ( CLIENT ) then
 			GAMEMODE.Backgrounds[MinigameIntro.Panel.Background].Init( MinigameIntro.Panel )
 		function MinigameIntro.Panel:Paint( w, h )
 			-- Draw background blue
+			draw.NoTexture()
 			surface.SetDrawColor( self.Colour )
 			surface.DrawRect( 0, 0, w, h )
 
@@ -424,50 +427,54 @@ if ( CLIENT ) then
 
 		-- Test player icon
 		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
-			local icon = vgui.Create( "DModelPanel", right )
-			--icon:SetSize( 200, 200 )
-			--icon:SetPos( rightx - twidth / 2, y + 64 )
-			icon:SetModel( ply:GetModel() )
-			icon.Size = 64
-			function icon:LayoutEntity( Entity ) return end	-- Disable cam rotation
-			local headpos = icon.Entity:GetBonePosition(icon.Entity:LookupBone("ValveBiped.Bip01_Head1"))
-				icon:SetLookAt(headpos)
-			local campos = headpos-Vector(-40, 0, -10)
-				icon:SetCamPos( campos )
-				icon.Entity:SetEyeTarget( campos )
-			function icon:Think()
-				if ( !MinigameIntro.Ready ) then return end
+			if ( ply and ply:IsValid() ) then
+				local icon = vgui.Create( "DModelPanel", right )
+				--icon:SetSize( 200, 200 )
+				--icon:SetPos( rightx - twidth / 2, y + 64 )
+				icon:SetModel( ply:GetModel() )
+				icon.Size = 64
+				function icon:LayoutEntity( Entity ) return end	-- Disable cam rotation
+				local headpos = icon.Entity:GetBonePosition(icon.Entity:LookupBone("ValveBiped.Bip01_Head1"))
+					icon:SetLookAt(headpos)
+				local campos = headpos-Vector(-40, 0, -10)
+					icon:SetCamPos( campos )
+					icon.Entity:SetEyeTarget( campos )
+					icon.Player = ply
+				function icon:Think()
+					if ( !MinigameIntro.Ready ) then return end
+					if ( !self.Player or !self.Player:IsValid() ) then self:Remove() return end
 
-				local ready = MinigameIntro.Ready[ply]
-				if ( !ready or !MinigameIntro.Columns[ready] ) then return end -- Late joiner fix
+					local ready = MinigameIntro.Ready[ply]
+					if ( !ready or !MinigameIntro.Columns[ready] ) then return end -- Late joiner fix
 
-				-- Position and scale by number of playres in column
-				local count = #MinigameIntro.Columns[ready]
-				local index = table.indexOf( MinigameIntro.Columns[ready], ply )
-				local layout
-					-- Find closest layout
-					local min = -1
-					for int, lay in pairs( layouts ) do
-						if ( count <= int and ( min == -1 or int < min ) ) then
-							min = int
+					-- Position and scale by number of playres in column
+					local count = #MinigameIntro.Columns[ready]
+					local index = table.indexOf( MinigameIntro.Columns[ready], ply )
+					local layout
+						-- Find closest layout
+						local min = -1
+						for int, lay in pairs( layouts ) do
+							if ( count <= int and ( min == -1 or int < min ) ) then
+								min = int
+							end
 						end
-					end
-					layout = layouts[min]
-				local offset = layout[index][1]
-				local size = layout[index][2]
+						layout = layouts[min]
+					local offset = layout[index][1]
+					local size = layout[index][2]
 
-				-- Lerp move
-				local x = {}
-					x[0] = xs[1]
-					x[1] = xs[2]
-					--x[2] = rightwidth / 3
-				local target = Vector( x[ready] - twidth / 2 + offset.x, y + 32 + offset.y )
-				icon.Pos = icon.Pos or target
-				icon.Pos = ApproachVector( FrameTime() * LERPSPEED, icon.Pos, target )
-				icon:SetPos( icon.Pos.x, icon.Pos.y )
+					-- Lerp move
+					local x = {}
+						x[0] = xs[1]
+						x[1] = xs[2]
+						--x[2] = rightwidth / 3
+					local target = Vector( x[ready] - twidth / 2 + offset.x, y + 32 + offset.y )
+					icon.Pos = icon.Pos or target
+					icon.Pos = ApproachVector( FrameTime() * LERPSPEED, icon.Pos, target )
+					icon:SetPos( icon.Pos.x, icon.Pos.y )
 
-				icon.Size = math.Approach( icon.Size, size, FrameTime() * LERPSIZESPEED )
-				icon:SetSize( icon.Size, icon.Size )
+					icon.Size = math.Approach( icon.Size, size, FrameTime() * LERPSIZESPEED )
+					icon:SetSize( icon.Size, icon.Size )
+				end
 			end
 		end
 

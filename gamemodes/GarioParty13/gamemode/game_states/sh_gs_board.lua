@@ -75,6 +75,12 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. STATE_BOARD .. "PostDrawOp
 	end
 end )
 
+hook.Add( "PrePlayerDraw", HOOK_PREFIX .. STATE_BOARD .. "PrePlayerDraw", function()
+	if ( GAMEMODE:GetStateName() == STATE_BOARD ) then
+		return true
+	end
+end )
+
 hook.Add( "CalcView", HOOK_PREFIX .. STATE_BOARD .. "_CalcView", function( self, ply, pos, angles, fov )
 	if ( GAMEMODE:GetStateName() == STATE_BOARD ) then
 		local center = GP13_BOARD_POS

@@ -237,6 +237,12 @@ function Turn:Next()
 end
 
 function Turn:Switch( ply, juststarted )
+	if ( !ply or !ply:IsValid() ) then
+		-- Handle player leaving early
+		table.RemoveByValue( self.Players, ply )
+		Turn:Next()
+		return
+	end
 	if ( !juststarted ) then
 		self:Finish()
 	end
@@ -259,6 +265,12 @@ end
 function Turn:IsSystemActive()
 	return GAMEMODE:GetStateName() == STATE_BOARD
 end
+
+hook.Add( "PlayerDisconnected", HOOK_PREFIX .. "PlayerDisconnected", function( ply )
+	if ( Turn.Current == ply ) then
+		Turn:Next()
+	end
+end )
 
 if ( CLIENT ) then
 	hook.Add( "KeyPress", HOOK_PREFIX .. "KeyPress", function( ply, key )

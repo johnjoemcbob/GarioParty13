@@ -13,7 +13,7 @@ GM.AddGame( NAME, "Goose", {
 	TagLine = "Bombs Away!",
 	Instructions = "Lay explosive eggs when you jump,\nblow up other players to win\nBy @jctwizard!",
 	Controls = "Jump to bomb!",
-	GIF = "https://i.imgur.com/uSNJNXN.gif",
+	GIF = "https://i.imgur.com/epNrjJt.gif",
 	HideDefaultHUD = false,
 	HideDefaultExtras = {
 		["CHudHealth"] = true,
@@ -79,7 +79,9 @@ GM.AddGame( NAME, "Goose", {
 		end
 
 		if ( CLIENT ) then
-			Music:Play( MUSIC_TRACK_ROOFTOP )
+			if ( ply == LocalPlayer() ) then
+				Music:Play( MUSIC_TRACK_ROOFTOP )
+			end
 		end
 	end,
 	PlayerSpawn = function( self, ply )
@@ -291,7 +293,9 @@ GM.AddGame( NAME, "Goose", {
 		if ( CLIENT ) then
 			self:RemoveRagdoll( ply )
 
-			Music:Pause( MUSIC_TRACK_ROOFTOP )
+			if ( ply == LocalPlayer() ) then
+				Music:Pause( MUSIC_TRACK_ROOFTOP )
+			end
 		end
 		if ( SERVER ) then
 			ply:SetColor( Color( 255, 255, 255, 255 ) )

@@ -10,8 +10,8 @@ STATE_LOBBY = "Lobby"
 BETWEEN_SPONSOR_CHANGES = 2
 
 local me = {
-	"https://i.imgur.com/MqNsnJA.png",
-	"https://i.imgur.com/sjbjiYO.png",
+	"http://johnjoemcbob.com/banner/garioparty_me.png",
+	"https://i.imgur.com/ZTdMWwb.png", -- Backup
 }
 local sponsors = {
 	"https://media.gmodstore.com/_/competition_banners/2020/gmodstore.png",
@@ -181,6 +181,15 @@ GM.AddGameState( STATE_LOBBY, {
 		-- Credits
 		local width = ScrW() / 2
 		local height = ScrH()
+
+		-- Me credits (backup)
+		local html = vgui.Create( "DHTML", self.Panel )
+		html:SetSize( width, height )
+		--html:Dock( LEFT )
+		html:SetPos( 0, ScrH() - off )
+		html:SetHTML( [[
+			<img style="text-align: center" src="]] .. me[2] .. [[" width="100%" style="position: absolute;bottom: 0px;">
+		]] )
 
 		-- Me credits
 		local html = vgui.Create( "DHTML", self.Panel )
