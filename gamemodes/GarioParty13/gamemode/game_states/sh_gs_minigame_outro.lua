@@ -197,7 +197,7 @@ if ( CLIENT ) then
 		end
 
 		-- Render player name at left
-		draw.SimpleText( tostring( ply ), "DermaLarge", x + off + border, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+		draw.SimpleText( ply:Nick(), "DermaLarge", x + off + border, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
 
 		-- Render current props score at right
 		local progress = 0

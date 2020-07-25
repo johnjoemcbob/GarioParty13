@@ -21,10 +21,12 @@ end
 -- Globals
 GM.Epsilon				= 0.001
 GM.GamemodePath			= "gamemodes/GarioParty13/"
+GM.ContentPath			= ""
 
 DEBUG_NOSTRIP = false
 
 HOOK_PREFIX			= "GarioParty13_"
+WORKSHOP_ID			= ""
 
 TRANSITION_DURATION	= 1
 

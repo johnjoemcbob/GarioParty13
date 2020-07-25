@@ -21,15 +21,7 @@ AddCSLuaFile( "cl_backgrounds.lua" )
 include( "shared.lua" )
 
 -- Resources
-resource.AddFile( "data/GarioParty13_/scenes/city.json" )
-resource.AddFile( "materials/eye.png" )
-resource.AddFile( "materials/background.png" )
-resource.AddFile( "sound/orch.wav" )
-resource.AddFile( "sound/quack.wav" )
-resource.AddFile( "sound/boo.wav" )
-resource.AddFile( "sound/scared.wav" )
-resource.AddFile( "sound/fall.wav" )
-resource.AddFile( "sound/pop.wav" )
+resource.AddWorkshop( WORKSHOP_ID ) -- This Content
 resource.AddWorkshop( "752655103" ) -- Goose
 resource.AddWorkshop( "331841113" ) -- Civ
 
@@ -37,7 +29,15 @@ resource.AddWorkshop( "331841113" ) -- Civ
   -- Gamemode Hooks --
 ------------------------
 function GM:Initialize()
-	
+	if ( WORKSHOP_ID == "" ) then
+		print( "GARIO PARTY 13" )
+		print( "WARNING:" )
+		print( "WORKSHOP_ID = ''" )
+		print( "WORKSHOP_ID NOT SET" )
+		print( "NO CONTENT BEING DISTRIBUTED TO CLIENTS" )
+		print( "BAD" )
+		print( "WARNING" )
+	end
 end
 
 function GM:InitPostEntity()

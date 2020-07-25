@@ -285,6 +285,18 @@ GM.AddGameState( STATE_LOBBY, {
 	end,
 })
 
+if ( SERVER ) then
+	-- Return to lobby if there are no players connected
+	hook.Add( "Think", HOOK_PREFIX .. STATE_LOBBY .. "Think", function()
+		if ( GAMEMODE:GetStateName() != STATE_LOBBY ) then
+			if ( #player.GetAll() == 0 ) then
+				--GAMEMODE:SwitchState( STATE_LOBBY )
+				RunConsoleCommand( "changelevel", "gm_construct" )
+			end
+		end
+	end )
+end
+
 if ( CLIENT ) then
 	-- TODO TEMP HOTRELOAD TESTING
 	if ( GAMEMODE ) then

@@ -737,7 +737,7 @@ GM.AddGame( NAME, "Default", {
 									pos, Angle( 0, 0, 0 ),
 									false
 								)
-								--ply.WallRunFloor:SetMaterial( "Models/effects/vol_light001" )
+								ply.WallRunFloor:SetMaterial( "Models/effects/vol_light001" )
 								ply.WallRunFloor:SetColor( Color( 0, 0, 0, 255 ) )
 							end
 							ply.WallRunFloor.z = pos.z

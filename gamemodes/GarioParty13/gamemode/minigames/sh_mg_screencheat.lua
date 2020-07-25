@@ -92,6 +92,12 @@ GM.AddGame( "Screencheat", "Default", {
 		-- Runs on CLIENT and SERVER realms!
 		-- ply
 
+		if ( SERVER ) then
+			if ( !ply:Alive() ) then
+				ply:Spawn()
+			end
+		end
+
 		if ( ply:GetActiveWeapon():IsValid() and ply:GetActiveWeapon():LastShootTime() == CurTime() ) then
 			local pos = ply:EyePos() - Vector( 0, 0, 5 ) + ply:EyeAngles():Forward() * 50
 
@@ -111,7 +117,7 @@ GM.AddGame( "Screencheat", "Default", {
 		-- Runs on SERVER realm!
 		-- victim/attacker
 
-		if ( attacker:IsValid() and attacker:IsPlayer() ) then
+		if ( attacker:IsValid() and attacker:IsPlayer() and attacker != victim ) then
 			attacker:SetNWInt( "Score", attacker:GetNWInt( "Score", 0 ) + 1 )
 
 			if ( attacker:GetNWInt( "Score", 0 ) >= 5 ) then

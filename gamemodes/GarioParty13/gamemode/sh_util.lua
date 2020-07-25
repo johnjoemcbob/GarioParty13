@@ -29,7 +29,7 @@ function LoadTableFromJSON( path, name )
 			path = path .. ".json"
 		end
 	if ( !file.Exists( path, zone ) ) then
-		path = gmod.GetGamemode().GamemodePath .. "content/data/" .. path
+		path = gmod.GetGamemode().ContentPath .. "data/" .. path
 		zone = "GAME"
 		if ( !file.Exists( path, zone ) ) then
 			return

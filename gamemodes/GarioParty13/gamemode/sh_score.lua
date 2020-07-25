@@ -20,6 +20,8 @@ function meta:GetScore()
 end
 if ( SERVER ) then
 	function meta:AddScore( add, novisual )
+		if ( !self or !self:IsValid() ) then return end -- Player might leave server
+
 		local old = self:GetScore()
 		local score = math.max( 0, old + add )
 		local change = score - old

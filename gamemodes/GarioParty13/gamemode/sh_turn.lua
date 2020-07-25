@@ -211,14 +211,16 @@ function Turn:LandOnSpace()
 	local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
 	local type = Board:GetSpace( space ).Type
 
-	if ( type == SPACE_TYPE_DEFAULT ) then
-		-- Add props
-		ply:AddScore( SCORE_SPACE_ADD )
-	elseif ( type == SPACE_TYPE_NEGATIVE ) then
-		-- Remove props
-		ply:AddScore( SCORE_SPACE_REMOVE )
-	else
-		print( "Warning: Unregistered space type: ", type )
+	if ( ply and ply:IsValid() ) then
+		if ( type == SPACE_TYPE_DEFAULT ) then
+			-- Add props
+			ply:AddScore( SCORE_SPACE_ADD )
+		elseif ( type == SPACE_TYPE_NEGATIVE ) then
+			-- Remove props
+			ply:AddScore( SCORE_SPACE_REMOVE )
+		else
+			print( "Warning: Unregistered space type: ", type )
+		end
 	end
 end
 
@@ -304,7 +306,7 @@ if ( CLIENT ) then
 
 				surface.SetDrawColor( COLOUR_WHITE )
 				surface.DrawTexturedRectRotated( pos.x, pos.y, pos.z, 96, 1 )
-				local text = tostring( Turn:Get() ) .. "'s turn!"
+				local text = Turn:Get():Nick() .. "'s turn!"
 				local font = "DermaLarge"
 				draw.SimpleText( text, font, pos.x, pos.y - 12, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 
