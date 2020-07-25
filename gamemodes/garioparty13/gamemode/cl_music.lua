@@ -34,6 +34,7 @@ Music.Tracks = Music.Tracks or {}
 function Music:Play( track, ent )
 	if ( track == -1 ) then return end
 	if ( !ent ) then ent = LocalPlayer() end
+	if ( !ent or !ent:IsValid() ) then return end -- Player first join doesn't have valid ent yet..
 
 	Music.Tracks[track] = Music.Tracks[track] or {}
 	if ( !Music.Tracks[track] or !Music.Tracks[track][ent] ) then

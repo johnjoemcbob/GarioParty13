@@ -92,7 +92,7 @@ GM.AddGameState( STATE_LOBBY, {
 		self.Panel = vgui.Create( "DPanel" )
 		self.Panel:SetSize( ScrW(), ScrH() )
 		self.Panel:Center()
-			self.Panel.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
+			self.Panel.Colour = GetRandomColour()
 			self.Panel.Highlight = GetColourHighlight( self.Panel.Colour )
 			self.Panel.Background = math.random( 1, #GAMEMODE.Backgrounds )
 			GAMEMODE.Backgrounds[self.Panel.Background].Init( self.Panel )
@@ -288,7 +288,7 @@ GM.AddGameState( STATE_LOBBY, {
 if ( SERVER ) then
 	-- Return to lobby if there are no players connected
 	hook.Add( "Think", HOOK_PREFIX .. STATE_LOBBY .. "Think", function()
-		if ( GAMEMODE:GetStateName() != STATE_LOBBY ) then
+		if ( GAMEMODE:GetStateName() != STATE_LOBBY and GAMEMODE:GetStateName() != STATE_ERROR ) then
 			if ( #player.GetAll() == 0 ) then
 				--GAMEMODE:SwitchState( STATE_LOBBY )
 				RunConsoleCommand( "changelevel", "gm_construct" )

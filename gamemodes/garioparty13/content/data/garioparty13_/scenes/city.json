@@ -1,0 +1,126 @@
+{
+	"base": {
+		"2": "[0 0 0]",
+		"1": "models/props_phx/huge/road_medium.mdl",
+		"3": "{0 0 0}",
+		"Scale": "[0.2 0.2 0.2]"
+	},
+	"background_buildings": {
+		"2": "[800 550 0]",
+		"1": "models/props_buildings/row_res_1_fullscale.mdl",
+		"3": "{0 90 0}",
+		"Scale": "[0.2 0.2 0.2]"
+	},
+	"2": {
+		"2": "[-32.4 -195.78872 0]",
+		"1": "models/props_phx/huge/road_curve.mdl",
+		"3": "{0 0 0}",
+		"Scale": "[0.2 0.2 0.2]"
+	},
+	"ground": {
+		"2": "[0 0 -2]",
+		"1": "models/hunter/plates/plate8x8.mdl",
+		"3": "{0 0 0}",
+		"Scale": "[10 10 1]",
+		"Material": "models/debug/debugwhite",
+		"Colour": "[50 80 30]"
+	},
+	"sky": {
+		"2": "[0 0 -200]",
+		"1": "models/props_phx/construct/metal_tube.mdl",
+		"3": "{0 0 0}",
+		"Scale": "[100 100 100]",
+		"Material": "models/debug/debugwhite",
+		"Colour": "[0 255 255]"
+	},
+	"carousel": {
+		"2": "[400 275 0]",
+		"1": "models/props_c17/playground_carousel01.mdl",
+		"3": "{0 -30 0}",
+		"Scale": "[1 1 1]"
+	},
+	"slide": {
+		"2": "[300 200 0]",
+		"1": "models/props_c17/playgroundslide01.mdl",
+		"3": "{0 -220 0}",
+		"Scale": "[0.5 0.5 0.5]"
+	},
+	"seesaw_legs": {
+		"2": "[320 100 0]",
+		"1": "models/props_c17/playground_teetertoter_stan.mdl",
+		"3": "{0 5 0}",
+		"Scale": "[1 1 1]"
+	},
+	"seesaw": {
+		"2": "[320 100 19.6]",
+		"1": "models/props_c17/playground_teetertoter_seat.mdl",
+		"3": "{0 5 -10}",
+		"Scale": "[1 1 1]"
+	},
+	"crane_legs": {
+		"2": "[450 600 0]",
+		"1": "models/cranes/crane_frame.mdl",
+		"3": "{0 0 0}",
+		"Scale": "[0.1 0.1 0.1]"
+	},
+	"crane_body": {
+		"2": "[450 600 43]",
+		"1": "models/cranes/crane_docks.mdl",
+		"3": "{0 0 0}",
+		"Scale": "[0.1 0.1 0.1]"
+	},
+	"trees1": {
+		"2": "[500 0 0]",
+		"1": "models/props_foliage/tree_springers_card_01_skybox.mdl",
+		"3": "{0 -30 0}",
+		"Scale": "[2 2 2]"
+	},
+	"trees2": {
+		"2": "[700 -200 0]",
+		"1": "models/props_foliage/tree_springers_card_01_skybox.mdl",
+		"3": "{0 30 0}",
+		"Scale": "[2 2 2]"
+	},
+	"trees3": {
+		"2": "[900 800 0]",
+		"1": "models/props_foliage/tree_springers_card_01_skybox.mdl",
+		"3": "{0 30 0}",
+		"Scale": "[2 2 2]"
+	},
+	"background_trees1": {
+		"2": "[1400 1400 0]",
+		"1": "models/props_foliage/tree_springers_card_01_skybox.mdl",
+		"3": "{0 30 0}",
+		"Scale": "[4 10 4]"
+	},
+	"background_trees2": {
+		"2": "[1700 700 0]",
+		"1": "models/props_foliage/tree_springers_card_01_skybox.mdl",
+		"3": "{0 10 0}",
+		"Scale": "[4 10 5]"
+	},
+	"background_trees3": {
+		"2": "[1700 -500 0]",
+		"1": "models/props_foliage/tree_springers_card_01_skybox.mdl",
+		"3": "{0 -10 0}",
+		"Scale": "[4 10 4]"
+	},
+	"background_trees4": {
+		"2": "[1400 -1500 0]",
+		"1": "models/props_foliage/tree_springers_card_01_skybox.mdl",
+		"3": "{0 -30 0}",
+		"Scale": "[4 10 6]"
+	},
+	"background_building": {
+		"2": "[700 0 0]",
+		"1": "models/props_phx/huge/evildisc_corp.mdl",
+		"3": "{0 30 0}",
+		"Scale": "[0.1 0.1 0.1]"
+	},
+	"background_tower": {
+		"2": "[500 150 0]",
+		"1": "models/props_phx/huge/tower.mdl",
+		"3": "{0 70 0}",
+		"Scale": "[0.1 0.1 0.1]"
+	}
+}

@@ -26,7 +26,7 @@ GM.ContentPath			= ""
 DEBUG_NOSTRIP = false
 
 HOOK_PREFIX			= "GarioParty13_"
-WORKSHOP_ID			= ""
+WORKSHOP_ID			= "2177102213"
 
 TRANSITION_DURATION	= 1
 
@@ -122,9 +122,16 @@ include( "sh_minigames_hooks.lua" )
 
 local meta = FindMetaTable( "Player" )
 function meta:GetColour()
-	return GAMEMODE.ColourPalette[self:GetNWInt( "Colour", 1 )]
+	local col = GAMEMODE.ColourPalette[self:GetNWInt( "Colour", 1 )]
+	return col
+end
+
+function GetRandomColour()
+	local col = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
+	return col
 end
 
 function GetLoopedColour( ind )
-	return GAMEMODE.ColourPalette[math.max( 0, math.floor( ind % #GAMEMODE.ColourPalette ) )]
+	local col = GAMEMODE.ColourPalette[math.max( 0, math.floor( ind % #GAMEMODE.ColourPalette ) )]
+	return col
 end

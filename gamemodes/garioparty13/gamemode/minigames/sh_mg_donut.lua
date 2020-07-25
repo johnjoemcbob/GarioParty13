@@ -125,7 +125,7 @@ GM.AddGame( NAME, "Default", {
 		-- Runs on CLIENT realm!
 		-- LocalPlayer()
 		
-		local colour = GAMEMODE.ColourPalette[LocalPlayer():GetNWInt( "Colour" )]
+		local colour = LocalPlayer():GetColour()
 
 		-- Timer
 		local font = "DermaLarge"
@@ -153,7 +153,7 @@ GM.AddGame( NAME, "Default", {
 		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			local txt = "" .. ply:GetNWInt( "Score", 0 )
 			local font = "DermaLarge"
-			local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+			local colour = ply:GetColour()
 			local border = 16
 			surface.SetFont( font )
 			local width, height = surface.GetTextSize( txt )

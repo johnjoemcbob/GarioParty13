@@ -111,12 +111,14 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 -- Net
 local NETSTRING = HOOK_PREFIX .. "Net_"
 local NETSTRING_MINIGAME = HOOK_PREFIX .. "Net_Minigame"
+local NETSTRING_MINIGAME_LATE = HOOK_PREFIX .. "Net_Minigame_Late"
 local NETSTRING_WAITING_CUSTOM = HOOK_PREFIX .. "Net_Waiting"
 local NETSTRING_WAITING_BROADCAST = HOOK_PREFIX .. "Net_Waiting_Broadcast"
 local NET_INT = 3
 if ( SERVER ) then
 	util.AddNetworkString( NETSTRING )
 	util.AddNetworkString( NETSTRING_MINIGAME )
+	util.AddNetworkString( NETSTRING_MINIGAME_LATE )
 	util.AddNetworkString( NETSTRING_WAITING_CUSTOM )
 	util.AddNetworkString( NETSTRING_WAITING_BROADCAST )
 
@@ -133,6 +135,16 @@ if ( SERVER ) then
 		net.Start( NETSTRING_MINIGAME )
 			net.WriteString( minigame )
 		net.Broadcast()
+	end
+
+	function MinigameIntro:SendLateMinigame( ply, minigame, ui )
+		-- Communicate to late joiner
+		net.Start( NETSTRING_MINIGAME_LATE )
+			net.WriteString( minigame )
+			net.WriteBool( ui )
+		net.Send( ply )
+
+		print( "Late joiner; ", ply, "sending minigame; ", minigame )
 	end
 
 	net.Receive( NETSTRING_WAITING_CUSTOM, function( lngth, ply )
@@ -163,6 +175,19 @@ if ( CLIENT ) then
 		GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame = minigame
 		GAMEMODE.GameStates[STATE_MINIGAME].Minigame = minigame
 		MinigameIntro:CreateMinigameIntroUI( minigame )
+	end )
+
+	net.Receive( NETSTRING_MINIGAME_LATE, function( lngth )
+		local minigame = net.ReadString()
+		local ui = net.ReadBool()
+
+		GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame = minigame
+		GAMEMODE.GameStates[STATE_MINIGAME].Minigame = minigame
+		if ( ui ) then
+			MinigameIntro:CreateMinigameIntroUI( minigame )
+		end
+
+		print( "Receive late minigame! " .. minigame )
 	end )
 
 	function MinigameIntro:SendWaitingToServer( tab )
@@ -228,6 +253,14 @@ function MinigameIntro:SetReady( ply, ready )
 	end
 end
 
+-- Gamemode hooks
+hook.Add( "PlayerInitialSpawn", HOOK_PREFIX .. "PlayerInitialSpawn", function( ply )
+	-- Has played a minigame or is at intro, send server value to sync
+	if ( GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame ) then
+		MinigameIntro:SendLateMinigame( ply, GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame )
+	end
+end )
+
 hook.Add( "KeyPress", HOOK_PREFIX .. "KeyPress", function( ply, key )
 	if ( GAMEMODE:GetStateName() == STATE_MINIGAME_INTRO ) then
 		if ( key == IN_MOVELEFT ) then
@@ -286,7 +319,7 @@ if ( CLIENT ) then
 		MinigameIntro.Panel = vgui.Create( "DPanel" )
 		MinigameIntro.Panel:SetSize( ScrW(), ScrH() )
 		MinigameIntro.Panel:Center()
-			MinigameIntro.Panel.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
+			MinigameIntro.Panel.Colour = GetRandomColour()
 			MinigameIntro.Panel.Highlight = GetColourHighlight( MinigameIntro.Panel.Colour )
 			MinigameIntro.Panel.Background = math.random( 1, #GAMEMODE.Backgrounds )
 			GAMEMODE.Backgrounds[MinigameIntro.Panel.Background].Init( MinigameIntro.Panel )

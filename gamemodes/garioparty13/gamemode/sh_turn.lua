@@ -156,6 +156,11 @@ function Turn:Think()
 
 	local next = true
 	if ( SERVER ) then
+		if ( !self.Current or !self.Current:IsValid() ) then
+			-- Handle players leaving on their turn
+			self.Finished = true
+		end
+
 		if ( !self.Finished and self.State == TURN_MOVE ) then
 			-- Move forwards one space at a time for each dice value
 			if ( !Board.MoveStart or Board.MoveStart + BOARD_MOVETIME <= CurTime() ) then
@@ -230,12 +235,13 @@ end
 
 function Turn:Next()
 	local index = table.indexOf( self.Players, self.Current ) + 1
-	if ( index <= #self.Players ) then
-		self:Switch( self.Players[index] )
-		return true
-	else
-		return false
+	if ( index > 0 and index <= #self.Players ) then
+		local success = self:Switch( self.Players[index] )
+		if ( success ) then
+			return true
+		end
 	end
+	return false
 end
 
 function Turn:Switch( ply, juststarted )
@@ -243,7 +249,7 @@ function Turn:Switch( ply, juststarted )
 		-- Handle player leaving early
 		table.RemoveByValue( self.Players, ply )
 		Turn:Next()
-		return
+		return false
 	end
 	if ( !juststarted ) then
 		self:Finish()
@@ -254,6 +260,8 @@ function Turn:Switch( ply, juststarted )
 	if ( SERVER ) then
 		self:Broadcast( ply )
 	end
+
+	return true
 end
 
 function Turn:Set( ply )
@@ -261,6 +269,14 @@ function Turn:Set( ply )
 end
 
 function Turn:Get()
+	if ( !self.Current or !self.Current:IsValid() ) then
+		local next = Turn:Next()
+		if ( next ) then
+			return self:Get()
+		else
+			return nil
+		end
+	end
 	return self.Current
 end
 
@@ -289,7 +305,7 @@ if ( CLIENT ) then
 		draw.NoTexture()
 
 		-- Turn intro
-		if ( Turn:IsSystemActive() ) then
+		if ( Turn:IsSystemActive() and Turn:Get() ) then
 			local progress = ( CurTime() - Turn.StartTime ) / TURN_INTRO_TIME
 			if ( progress >= 0 and progress <= 1 ) then
 				local center = Vector( ScrW() / 2, ScrH() / 8, ScrW() )

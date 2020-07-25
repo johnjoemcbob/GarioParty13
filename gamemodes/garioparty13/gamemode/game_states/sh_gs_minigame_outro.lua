@@ -30,13 +30,15 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 		end
 
 		-- Leave timer
-		timer.Simple( DURATION, function()
-			if ( GAMEMODE.GameStates[STATE_BOARD].Round >= MAX_ROUNDS ) then
-				GAMEMODE:SwitchState( STATE_WIN )
-			else
-				GAMEMODE:SwitchState( STATE_BOARD )
-			end
-		end )
+		if ( SERVER ) then
+			timer.Simple( DURATION, function()
+				if ( GAMEMODE.GameStates[STATE_BOARD].Round >= MAX_ROUNDS ) then
+					GAMEMODE:SwitchState( STATE_WIN )
+				else
+					GAMEMODE:SwitchState( STATE_BOARD )
+				end
+			end )
+		end
 
 		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			ply:HideFPSController()
@@ -76,7 +78,7 @@ if ( CLIENT ) then
 		self.Panel = vgui.Create( "DPanel" )
 		self.Panel:SetSize( ScrW(), ScrH() )
 		self.Panel:Center()
-			self.Panel.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
+			self.Panel.Colour = GetRandomColour()
 			self.Panel.Highlight = GetColourHighlight( self.Panel.Colour )
 			self.Panel.Background = math.random( 1, #GAMEMODE.Backgrounds )
 			GAMEMODE.Backgrounds[self.Panel.Background].Init( self.Panel )

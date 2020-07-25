@@ -21,6 +21,8 @@ AddCSLuaFile( "cl_backgrounds.lua" )
 include( "shared.lua" )
 
 -- Resources
+resource.AddFile( "data/garioparty13_/scenes/city.json" )
+resource.AddFile( "data/garioparty13_/scenes/win.json" )
 resource.AddWorkshop( WORKSHOP_ID ) -- This Content
 resource.AddWorkshop( "752655103" ) -- Goose
 resource.AddWorkshop( "331841113" ) -- Civ

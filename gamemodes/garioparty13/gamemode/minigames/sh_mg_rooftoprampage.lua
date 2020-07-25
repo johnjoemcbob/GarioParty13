@@ -135,6 +135,10 @@ GM.AddGame( NAME, "Goose", {
 			--	ply:SetPos(clampedPos)
 			--end
 
+			if ( ply:GetPos().z < self["ROOF_ORIGIN"].z - 100 ) then
+				self:PlayerSpawn( ply )
+			end
+
 			if ( ply:Alive() and ply:KeyDown( IN_JUMP ) and ply.EggTimer <= 0 ) then
 				ply:EmitSound( "quack.wav", 75, math.random( 50, 150 ) )
 
@@ -214,7 +218,7 @@ GM.AddGame( NAME, "Goose", {
 			local txt = "" .. ply:GetNWInt( "Score" )
 			local font = "DermaLarge"
 			local border = 16
-			local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+			local colour = ply:GetColour()
 			surface.SetFont( font )
 			local width, height = surface.GetTextSize( txt )
 				width = width + border
@@ -250,7 +254,7 @@ GM.AddGame( NAME, "Goose", {
 		-- Runs on CLIENT realm!
 		-- ply
 
-		local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+		local colour = ply:GetColour()
 		surface.SetDrawColor( colour )
 		draw.NoTexture()
 
@@ -342,7 +346,7 @@ GM.AddGame( NAME, "Goose", {
 			end
 		end
 
-		-- Hide all walls?c
+		-- Hide all walls?
 	end,
 	RemoveWalls = function( self )
 		if ( self.Walls ) then

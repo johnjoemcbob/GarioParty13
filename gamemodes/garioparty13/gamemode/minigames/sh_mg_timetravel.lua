@@ -310,7 +310,7 @@ GM.AddGame( NAME, "Default", {
 		local off = ScrW() / 64
 
 		-- Health
-		local colour = GAMEMODE.ColourPalette[LocalPlayer():GetNWInt( "Colour" )]
+		local colour = LocalPlayer():GetColour()
 		local percent = LocalPlayer():Health() / LocalPlayer():GetMaxHealth()
 		local size = ScrH() / 16
 		local width = size * 4
@@ -376,7 +376,7 @@ GM.AddGame( NAME, "Default", {
 			local txt = "" .. ply:GetNWInt( "Score", 0 )
 			local font = "DermaLarge"
 			local border = 16
-			local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+			local colour = ply:GetColour()
 			surface.SetFont( font )
 			local width, height = surface.GetTextSize( txt )
 				width = width + border

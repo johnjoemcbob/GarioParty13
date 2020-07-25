@@ -142,12 +142,14 @@ hook.Add( "HUDPaint", HOOK_PREFIX .. STATE_WIN .. "_HUDPaint", function()
 		local colour		= COLOUR_WHITE
 		local outlinecolour	= COLOUR_BLACK
 		--draw.RoundedBox( 4, x - w / 2, y - h / 2, w, h, COLOUR_WHITE )
-		draw.SimpleTextOutlined( self.Winners[1]:Nick() .. " Wins!!", "MinigameTitle", x, y, self.Winners[1]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
-		if ( self.Winners[2] ) then
+		if ( self.Winners[1] and self.Winners[1]:IsValid() ) then
+			draw.SimpleTextOutlined( self.Winners[1]:Nick() .. " Wins!!", "MinigameTitle", x, y, self.Winners[1]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
+		end
+		if ( self.Winners[2] and self.Winners[2]:IsValid() ) then
 			draw.SimpleTextOutlined( "2nd: " .. self.Winners[2]:Nick(), "DermaLarge", x, y + between * 1, self.Winners[2]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
 		end
-		if ( self.Winners[3] ) then
-			draw.SimpleTextOutlined( "3rd: " .. self.Winners[2]:Nick(), "DermaLarge", x, y + between * 1.5, self.Winners[3]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
+		if ( self.Winners[3] and self.Winners[3]:IsValid() ) then
+			draw.SimpleTextOutlined( "3rd: " .. self.Winners[3]:Nick(), "DermaLarge", x, y + between * 1.5, self.Winners[3]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
 		end
 
 		-- Full scores in bottom left

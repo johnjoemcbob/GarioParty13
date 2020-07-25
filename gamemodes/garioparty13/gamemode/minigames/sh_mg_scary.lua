@@ -346,7 +346,7 @@ GM.AddGame( NAME, "Default", {
 			ply:SetModelScale( 0.01 )
 			ply:SetModelScale( self["PLAYER_SIZE"], 0.5 )
 			ply:SetMaterial( "models/debug/debugwhite" )
-			ply:SetColor( GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )] )
+			ply:SetColor( ply:GetColour() )
 
 			ply:SetJumpPower( self["JUMP_POWER"] )
 			ply:SetHealth( 10000 )
@@ -482,7 +482,7 @@ GM.AddGame( NAME, "Default", {
 			local txt = "" .. ply:GetNWInt( "Score", 0 )
 			local font = "DermaLarge"
 			local border = 16
-			local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+			local colour = ply:GetColour()
 			surface.SetFont( font )
 			local width, height = surface.GetTextSize( txt )
 				width = width + border
@@ -531,7 +531,7 @@ GM.AddGame( NAME, "Default", {
 		-- Runs on CLIENT realm!
 		-- ply
 
-		local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+		local colour = ply:GetColour()
 		surface.SetDrawColor( colour )
 		draw.NoTexture()
 

@@ -190,7 +190,7 @@ GM.AddGame( NAME, "Default", {
 	end,
 	HUDPaint = function( self )
 		-- Timer
-		local colour = GAMEMODE.ColourPalette[LocalPlayer():GetNWInt( "Colour" )]
+		local colour = LocalPlayer():GetColour()
 		local font = "DermaLarge"
 		local width = ScrW() / 4
 		local height = ScrH() / 16
@@ -235,7 +235,8 @@ GM.AddGame( NAME, "Default", {
 				if ( ply == LocalPlayer() ) then
 					name = "Me"
 				end
-			local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+			local colour = ply:GetColour()
+				local colour = Color( colour.r, colour.g, colour.b, colour.a )
 				colour.a = 128
 
 			local border = 12

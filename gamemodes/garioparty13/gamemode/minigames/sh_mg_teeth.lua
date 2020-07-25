@@ -83,7 +83,7 @@ GM.AddGame( "Teeth", "Default", {
 
 				ply.Background = math.random( 1, #GAMEMODE.Backgrounds )
 				ply.BackgroundData = {}
-				ply.BackgroundData.Colour = GAMEMODE.ColourPalette[math.random( 1, #GAMEMODE.ColourPalette )]
+				ply.BackgroundData.Colour = GetRandomColour()
 				ply.BackgroundData.Highlight = GetColourHighlight( ply.BackgroundData.Colour )
 				GAMEMODE.Backgrounds[ply.Background].Init( ply.BackgroundData )
 

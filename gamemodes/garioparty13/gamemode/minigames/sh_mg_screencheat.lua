@@ -303,7 +303,7 @@ GM.AddGame( "Screencheat", "Default", {
 	end,
 	CheatHUDPaint = function( self, ply, quad )
 		-- Draw player name bottom center
-		local colour = GAMEMODE.ColourPalette[ply:GetNWInt( "Colour" )]
+		local colour = ply:GetColour()
 		draw.DrawText( ply:GetName(), "DermaLarge", quad[1] + quad[3] / 2 + 2, quad[2] + quad[4] / 16 * 14 + 2, Color( 0, 0, 0, 255 ), TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
 		draw.DrawText( ply:GetName(), "DermaLarge", quad[1] + quad[3] / 2, quad[2] + quad[4] / 16 * 14, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
 
