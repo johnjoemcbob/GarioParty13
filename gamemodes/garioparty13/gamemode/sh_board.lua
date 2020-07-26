@@ -24,6 +24,7 @@ local SOUND_BOARD_MOVE	= {
 
 SPACE_TYPE_DEFAULT	= 0
 SPACE_TYPE_NEGATIVE	= 1
+SPACE_TYPE_INVEST	= 2
 
 Board = Board or {}
 local LastSpaceAdded = nil
@@ -41,7 +42,7 @@ local function setupboard()
 			{ Vector( 1, 0 ), Vector( 0, 1 ) } )
 		Board:StartDownPath( path )
 			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
-			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_INVEST )
 			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_NEGATIVE )
 			Board:AddSpaceFromLast( 1, 0, SPACE_TYPE_DEFAULT )
 			-- Left of map
@@ -53,7 +54,7 @@ local function setupboard()
 			-- Left of map
 			Board:StartDownPath( path_left )
 				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_NEGATIVE )
-				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_INVEST )
 				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
 				Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_NEGATIVE )
 					-- Row 3
@@ -73,7 +74,7 @@ local function setupboard()
 				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
 				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_NEGATIVE )
 				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
-				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
+				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_INVEST )
 				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_NEGATIVE )
 				Board:AddSpaceFromLast( -1, 0, SPACE_TYPE_DEFAULT )
 				-- Back to start
@@ -83,7 +84,7 @@ local function setupboard()
 				Board:AddSpaceFromLast( 0, -1, SPACE_TYPE_DEFAULT )
 		Board:StartDownPath( path )
 			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_NEGATIVE )
-			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
+			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_INVEST )
 			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_DEFAULT )
 			Board:AddSpaceFromLast( 0, 1, SPACE_TYPE_NEGATIVE )
  
@@ -141,6 +142,34 @@ function Board:GetSpace( vec )
 	return Board.Data[vec.x][vec.y]
 end
 
+function Board:OnPassSpace( data )
+	local ply = Turn.Current
+	local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
+
+	local canmove = true
+		if ( self.SpecialSpaces[data.Type] ) then
+			-- Start custom space logic
+			Board:BroadcastSpecialSpace( ply, space )
+			Turn.State = TURN_SPECIAL
+			canmove = false
+		end
+	return canmove
+end
+
+function Board:OnLandSpace( data )
+	local ply = Turn.Current
+	local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
+
+	local shouldend = true
+		if ( self.SpecialSpaces[data.Type] ) then
+			-- Start custom space logic
+			Board:BroadcastSpecialSpace( ply, space )
+			Turn.State = TURN_SPECIAL
+			shouldend = false
+		end
+	return shouldend
+end
+
 local layouts = {
 	[1] = {
 		{ Vector( 0, 0 ) },
@@ -166,9 +195,15 @@ local layouts = {
 
 -- Net
 local NETSTRING = HOOK_PREFIX .. "Net"
+local NETSTRING_SPECIALSPACE = HOOK_PREFIX .. "Net_SpecialSpace"
+local NETSTRING_SPECIALSPACE_CLOSE = HOOK_PREFIX .. "Net_SpecialSpace_Close"
+local NETSTRING_SPECIALSPACE_DATA = HOOK_PREFIX .. "Net_SpecialSpace_Data"
 local NET_INT = 5
 if ( SERVER ) then
 	util.AddNetworkString( NETSTRING )
+	util.AddNetworkString( NETSTRING_SPECIALSPACE )
+	util.AddNetworkString( NETSTRING_SPECIALSPACE_CLOSE )
+	util.AddNetworkString( NETSTRING_SPECIALSPACE_DATA )
 
 	function Board:BroadcastMove( ply, pos, remaining )
 		ply:SetNWVector( "BoardPos", pos )
@@ -179,6 +214,38 @@ if ( SERVER ) then
 			net.WriteEntity( ply )
 			net.WriteVector( pos )
 			net.WriteInt( remaining, NET_INT )
+		net.Broadcast()
+	end
+
+	function Board:BroadcastSpecialSpace( ply, space )
+		-- Communicate to all clients
+		net.Start( NETSTRING_SPECIALSPACE )
+			net.WriteEntity( ply )
+			net.WriteVector( space )
+		net.Broadcast()
+	end
+
+	net.Receive( NETSTRING_SPECIALSPACE_CLOSE, function( lngth, ply )
+		if ( ply != Turn.Current and !Turn.Current:IsBot() ) then return end -- Shouldn't happen but verify its the current player answering for themselves
+
+		local ply = Turn.Current
+		local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
+		local type = Board.Data[space.x][space.y].Type
+		local advance = Board.SpecialSpaces[type]:ServerReceive( ply, space )
+		Board:BroadcastSpecialSpaceData( space )
+
+		if ( advance ) then
+			Turn.State = TURN_MOVE
+		end
+	end )
+
+	function Board:BroadcastSpecialSpaceData( space )
+		local type = self.Data[space.x][space.y].Type
+
+		-- Communicate to all clients
+		net.Start( NETSTRING_SPECIALSPACE_DATA )
+			net.WriteVector( space )
+			self.SpecialSpaces[type]:UpdateAllPlayers()
 		net.Broadcast()
 	end
 end
@@ -192,6 +259,29 @@ if ( CLIENT ) then
 		Turn.State = TURN_MOVE
 		Board:Move( ply, pos )
 		Board.Moves = remaining
+	end )
+
+	net.Receive( NETSTRING_SPECIALSPACE, function( lngth )
+		local ply = net.ReadEntity()
+		local space = net.ReadVector()
+
+		-- Open UI for all
+		-- But only allow changing data on current turn player
+		Board:OnSpecialSpace( ply, space )
+	end )
+
+	function Board:SendSpecialSpaceClose( func )
+		-- Communicate to all clients
+		net.Start( NETSTRING_SPECIALSPACE_CLOSE )
+			func()
+		net.SendToServer()
+	end
+
+	net.Receive( NETSTRING_SPECIALSPACE_DATA, function( lngth )
+		local space = net.ReadVector()
+
+		local type = Board.Data[space.x][space.y].Type
+		Board.SpecialSpaces[type]:ReceiveUpdate( space )
 	end )
 end
 
@@ -335,6 +425,9 @@ if ( CLIENT ) then
 						if ( space.Type == SPACE_TYPE_NEGATIVE ) then
 							col = COLOUR_NEGATIVE
 						end
+						if ( space.Type == SPACE_TYPE_INVEST ) then
+							col = COLOUR_WHITE
+						end
 
 					for k, conn in pairs( space.Connections ) do
 						local endpos = GP13_BOARD_POS + Vector( conn.y, conn.x ) * GP13_BOARD_SCALE
@@ -386,6 +479,246 @@ if ( CLIENT ) then
 			render.SetLightingMode( 0 )
 		render.SetLightingMode( 0 )
 	end
+
+	function Board:OnSpecialSpace( ply, space )
+		-- Check type from space
+		local type = self.Data[space.x][space.y].Type
+		Board.SpecialSpaces[type]:ClientStart( ply, space )
+	end
 end
+
+Board.SpecialSpaces = {}
+Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
+	ClientStart = function( self, ply, space )
+		-- Store arguments for later
+		self.Player = ply
+		self.Space = space
+		self.Owner = nil
+
+		-- Open UI
+		local w = ScrH() / 2
+		local h = w
+		local tab = self
+		local frame = vgui.Create( "DFrame" )
+		frame:SetSize( w, h )
+		frame:Center()
+		frame:SetTitle( "Invest" )
+		frame:ShowCloseButton( false )
+		function frame:OnClose()
+			tab:ClientStop( ply, space )
+		end
+		function frame:Think()
+			-- Failsafe
+			if ( ply != Turn.Current ) then
+				self:Close()
+			end
+		end
+		LocalPlayer().InvestUI = frame
+
+		-- Done button
+		local refer = "They"
+		if ( ply == LocalPlayer() or ply:IsBot() ) then
+			local button = vgui.Create( "DButton", frame )
+			button:SetText( "Done" )
+			button:SetSize( w / 2, h / 16 )
+			button:Dock( BOTTOM )
+			button.DoClick = function( self )
+				tab:ClientStop( ply, space )
+
+				self:Remove()
+			end
+
+			refer = "You"
+		end
+
+		local label = vgui.Create( "DLabel", frame )
+		label:SetText( refer .. " have " .. ply:GetScore() .. " Props to donate!" )
+		label:Dock( BOTTOM )
+		frame.Label = label
+
+		-- List
+		local layout = vgui.Create( "DListLayout", frame )
+		layout:Dock( FILL )
+		frame.List = layout
+		frame.PopulateList = function( self, showchange )
+			self.List:Clear()
+
+			local tab = Board.SpecialSpaces[SPACE_TYPE_INVEST]
+			local players = PlayerStates:GetPlayers( PLAYER_STATE_PLAY )
+				for k, ply in pairs( players ) do
+					-- Ensure data exists
+					tab.Data = tab.Data or {}
+					tab.Data[space.x] = tab.Data[space.x] or {}
+					tab.Data[space.x][space.y] = tab.Data[space.x][space.y] or {}
+					tab.Data[space.x][space.y][ply] = tab.Data[space.x][space.y][ply] or {}
+					tab.Data[space.x][space.y][ply].Current = tab.Data[space.x][space.y][ply].Current or 0
+					tab.Data[space.x][space.y][ply].Add = tab.Data[space.x][space.y][ply].Add or 0
+	
+					-- Setup for sorting by investment below
+					tab.Data[space.x][space.y][ply].Current = math.random( -100, 100 ) -- TODO TEMP REMOVE
+					ply.Score = tab.Data[space.x][space.y][ply].Current
+				end
+			local index = 0
+			for k, ply in SortedPairsByMemberValue( players, "Score", true ) do
+				-- Store the top player
+				if ( index == 0 ) then
+					if ( !tab.Owner ) then
+						tab.Owner = ply
+					end
+
+					if ( showchange ) then
+						ply:EmitSound( SOUND_PLACINGCHANGE[math.random( 1, #SOUND_PLACINGCHANGE )] )
+
+						if ( ply != tab.Owner ) then
+							self.Label:SetText( "New owner is " .. ply:Nick() .. ", sorry " .. tab.Owner:Nick() .. "!" )
+						else
+							self.Label:SetText( ply:Nick() .. " remains the owner!" )
+						end
+					end
+				end
+
+				-- Create UI
+				local panel = vgui.Create( "DPanel" )
+					function panel:Paint( w, h )
+						-- Background
+						surface.SetDrawColor( COLOUR_WHITE )
+						self:DrawFilledRect()
+
+						-- Player name
+						local text = ply:Nick()
+						local font = "DermaDefault"
+						draw.SimpleText( text, font, 8, h / 2, COLOUR_BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+
+						-- Current invested props
+						local text = "Donations: " .. tostring( tab.Data[space.x][space.y][ply].Current )
+						local font = "DermaDefault"
+						draw.SimpleText( text, font, w / 3 + 8, h / 2, COLOUR_BLACK, TEXT_ALIGN_LEFT, TEXT_ALIGN_CENTER )
+					end
+				frame.List:Add( panel )
+
+				if ( ply == tab.Player and !showchange ) then
+					local w = w / 3
+					local h = 128
+					-- Add controls
+					local controls = vgui.Create( "DPanel", panel )
+					controls:SetSize( w, h )
+					controls:Dock( RIGHT )
+
+					local entry
+					local buttonsize = w / 6
+					local max = ply:GetScore()
+
+					-- Less
+					local button = vgui.Create( "DButton", controls )
+					button:SetText( "<" )
+					button:SetSize( buttonsize, h )
+					button:Dock( LEFT )
+					button.DoClick = function()
+						entry:SetValue( entry:GetValue() - 1 )
+						entry:OnChange()
+					end
+					-- More
+					local button = vgui.Create( "DButton", controls )
+					button:SetText( ">" )
+					button:SetSize( buttonsize, h )
+					button:Dock( RIGHT )
+					button.DoClick = function()
+						entry:SetValue( entry:GetValue() + 1 )
+						entry:OnChange()
+					end
+					-- Exact Entry
+					entry = vgui.Create( "DTextEntry", controls )
+					entry:Dock( FILL )
+					entry:SetValue( 0 )
+					entry:SetNumeric( true )
+					entry.OnChange = function( self )
+						-- Clamp and reset if needed
+						local val = tonumber( self:GetValue() )
+						if ( val < 0 or val > max ) then
+							val = math.Clamp( val, 0, max )
+							self:SetValue( val )
+						end
+
+						-- Update proposed investment
+						tab.Data[space.x][space.y][ply].Add = val
+					end
+				end
+
+				index = index + 1
+			end
+		end
+		frame:PopulateList()
+
+		-- Only current player can input
+		if ( ply == LocalPlayer() or ply:IsBot() ) then
+			frame:MakePopup()
+			--frame:ShowCloseButton( true )
+		end
+	end,
+	ClientStop = function( self, ply, space )
+		-- On UI closed
+		-- Send message back to server
+		Board:SendSpecialSpaceClose( function() self:ClientSendToServer() end )
+	end,
+
+	-- Current player interaction
+	ClientSendToServer = function( self )
+		local ply = LocalPlayer()
+		if ( ply != self.Player ) then return end -- Shouldn't happen but continuous checks
+
+		local space = self.Space
+
+		-- Net above, Write data in here
+		net.WriteFloat( self.Data[space.x][space.y][ply].Add )
+	end,
+	ServerReceive = function( self, ply, space )
+		-- Net above, Read data in here
+		local add = net.ReadFloat()
+
+		-- Ensure data exists
+		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+			self.Data = self.Data or {}
+			self.Data[space.x] = self.Data[space.x] or {}
+			self.Data[space.x][space.y] = self.Data[space.x][space.y] or {}
+			self.Data[space.x][space.y][ply] = self.Data[space.x][space.y][ply] or {}
+			self.Data[space.x][space.y][ply].Current = self.Data[space.x][space.y][ply].Current or 0
+		end
+
+		-- Verify it's in range
+		if ( add >= 0 and add <= ply:GetScore() ) then
+			-- Change with newly received data
+			ply:AddScore( -add )
+			self.Data[space.x][space.y][ply].Current = self.Data[space.x][space.y][ply].Current + add
+
+			-- Delay to show updated list
+			timer.Simple( 1, function()
+				Turn.State = TURN_MOVE
+			end )
+			return false
+		end
+
+		return true
+	end,
+
+	-- Broadcast interaction back to all players, and late joiners
+	UpdateAllPlayers = function( self )
+		net.WriteTable( self.Data )
+	end,
+	ReceiveUpdate = function( self )
+		local data = net.ReadTable()
+
+		self.Data = data
+
+		-- Late delete if still exists
+		LocalPlayer().InvestUI:PopulateList( true )
+		timer.Simple( 1, function()
+			local ui = LocalPlayer().InvestUI
+			if ( ui and ui:IsValid() ) then
+				ui:Remove()
+				LocalPlayer().InvestUI = nil
+			end
+		end )
+	end,
+}
 
 setupboard()

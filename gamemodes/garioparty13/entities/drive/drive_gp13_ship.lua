@@ -114,6 +114,11 @@ drive.Register( "drive_gp13_ship",
 		elseif ( cmd:KeyDown( IN_BACK ) and !self.LastPressedBackward ) then
 			self.Speed = self.Speed - 1
 		end
+		-- TODO check keys here instead!!
+		-- TODO check keys here instead!!
+		-- TODO check keys here instead!!
+		-- TODO check keys here instead!!
+		-- TODO check keys here instead!!
 		self.LastPressedForward = cmd:KeyDown( IN_FORWARD )
 		self.LastPressedBackward = cmd:KeyDown( IN_BACK )
 		self.Speed = math.Clamp( self.Speed, 1, SPEED_SETTING.COUNT - 1 )

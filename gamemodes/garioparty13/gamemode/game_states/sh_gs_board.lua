@@ -27,7 +27,6 @@ GM.AddGameState( STATE_BOARD, {
 		self.Round = ( self.Round or 0 )
 		if ( SERVER ) then
 			self.Round = self.Round + 1
-			print( self.Round )
 			if ( self.Round == MAX_ROUNDS ) then
 				PrintMessage( HUD_PRINTCENTER, "Last Round!" )
 			end

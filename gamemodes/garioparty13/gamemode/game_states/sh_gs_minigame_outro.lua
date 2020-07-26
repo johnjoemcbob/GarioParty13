@@ -16,12 +16,6 @@ local DURATION_UPDATE_PROPS = 0.2
 local TIME_UPDATE_PROPS = 2
 local TIME_UPDATE_PLACINGS = 3
 
-local placingchange = {
-	"vo/npc/male01/nice.wav",
-	"vo/npc/female01/nice01.wav",
-	"vo/npc/female01/nice02.wav",
-}
-
 GM.AddGameState( STATE_MINIGAME_OUTRO, {
 	OnStart = function( self )
 		-- Create UI
@@ -244,7 +238,7 @@ if ( CLIENT ) then
 		ply.OutroPanel.Target = slot
 		ply.OutroPanel.StartLerpTime = CurTime()
 
-		ply:EmitSound( placingchange[math.random( 1, #placingchange )] )
+		ply:EmitSound( SOUND_PLACINGCHANGE[math.random( 1, #SOUND_PLACINGCHANGE )] )
 	end
 
 	function MinigameOutro:FinishPlayerLerp( ply )

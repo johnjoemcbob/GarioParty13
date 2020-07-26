@@ -119,6 +119,10 @@ function meta_ply:SetGame( game )
 		self:GetGame().Players[self] = true
 		self:StoreOnJoinGame()
 		self:GetGame():PlayerJoin( self )
+		if ( !self:Alive() ) then
+			-- Ensure the player is alive before starting the minigame!
+			self:Spawn()
+		end
 		self:GetGame():PlayerSpawn( self )
 		self.WonLastGame = false
 		self:SetNWInt( "Score", 0 )

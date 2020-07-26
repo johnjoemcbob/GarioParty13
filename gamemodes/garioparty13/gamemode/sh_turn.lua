@@ -13,6 +13,7 @@ TURN_ROLL		= 0
 TURN_MOVE		= 1
 TURN_CHOOSEDIR	= 2
 TURN_LAND		= 3
+TURN_SPECIAL	= 4
 
 TURN_INTRO_TIME	= 2
 TURN_ASK_TIME	= 2
@@ -166,11 +167,17 @@ function Turn:Think()
 			if ( !Board.MoveStart or Board.MoveStart + BOARD_MOVETIME <= CurTime() ) then
 				if ( Dice.Result and Dice.Result > 0 ) then
 					local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
-					if ( #Board.Data[space.x][space.y].Connections == 1 ) then
-						self:PickDir( 1 )
-					else
-						self.State = TURN_CHOOSEDIR
-						self:AskDirection( self.Current )
+					local shouldmove = true
+						if ( self.CurrentMoves != 0 ) then
+							shouldmove = Board:OnPassSpace( Board.Data[space.x][space.y] )
+						end
+					if ( shouldmove ) then
+						if ( #Board.Data[space.x][space.y].Connections == 1 ) then
+							self:PickDir( 1 )
+						else
+							self.State = TURN_CHOOSEDIR
+							self:AskDirection( self.Current )
+						end
 					end
 				else
 					self.DiceRemaining = self.DiceRemaining - 1
@@ -179,17 +186,23 @@ function Turn:Think()
 
 						-- React to space landed on
 						Turn:LandOnSpace()
+						local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
+						local shouldend = Board:OnLandSpace( Board.Data[space.x][space.y] )
 
 						-- End turn timer
-						timer.Simple( 1, function()
-							self.Finished = true
-						end )
+						if ( shouldend ) then
+							timer.Simple( 1, function()
+								self.Finished = true
+							end )
+						end
 					else
 						self.State = TURN_ROLL
 						Dice:Roll( self.Current )
 					end
 				end
 			end
+		else
+			self.CurrentMoves = 0
 		end
 
 		if ( self.Finished ) then
@@ -208,7 +221,8 @@ function Turn:PickDir( dir )
 	Dice.Result = Dice.Result - 1
 	Board:BroadcastMove( ply, target, Dice.Result )
 
-	Turn.State = TURN_MOVE
+	self.State = TURN_MOVE
+	self.CurrentMoves = self.CurrentMoves + 1
 end
 
 function Turn:LandOnSpace()

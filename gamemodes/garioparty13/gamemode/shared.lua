@@ -89,6 +89,12 @@ PLAYERMODELS = {
 	"models/player/group01/male_06.mdl",
 }
 
+SOUND_PLACINGCHANGE = {
+	"vo/npc/male01/nice.wav",
+	"vo/npc/female01/nice01.wav",
+	"vo/npc/female01/nice02.wav",
+}
+
 -- Net Strings
 
 -- Resources

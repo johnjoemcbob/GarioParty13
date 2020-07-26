@@ -422,7 +422,7 @@ GM.AddGame( NAME, "Default", {
 			local pos = ply:EyePos() --+ dir * self["PUSHRANGE"]
 				-- debugoverlay.Sphere( pos, self["PUSHRANGE"], 2, Color( 255, 0, 255, 1 ), true )
 			for k, ent in pairs( ents.FindInSphere( pos, self["PUSHRANGE"] ) ) do
-				if ( ent:IsValid() and ent:IsPlayer() and ent != ply ) then
+				if ( ent:IsValid() and ent:IsPlayer() and ent != ply and !ent:GetObserverTarget():IsValid() ) then
 					local vel = dir * self["PUSHFORCE"]
 						if ( ent:IsOnGround() ) then
 							vel = vel + Vector( 0, 0, 1 ) * self["PUSHUPFORCE"]
