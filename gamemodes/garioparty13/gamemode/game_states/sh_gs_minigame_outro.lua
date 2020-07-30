@@ -54,6 +54,7 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 
 			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				ply.LastProps = ply:GetScore()
+				ply.LastStars = ply:GetStars()
 			end
 		end
 
@@ -197,15 +198,17 @@ if ( CLIENT ) then
 
 		-- Render current props score at right
 		local progress = 0
-		local props = ply.LastProps
+		local props = ply.LastProps or 0
+		local stars = ply.LastStars or 0
 			if ( ply.OutroPanel.StartNumberTime ) then
 				progress = math.Clamp( ( CurTime() - ply.OutroPanel.StartNumberTime ) / DURATION_UPDATE_PROPS, 0, 1 )
 				if ( progress >= 1 ) then
 					props = ply:GetScore()
+					stars = ply:GetStars()
 				end
 			end
 		local textx = x + w - border
-		local width = draw.SimpleText( props .. " " .. SCORE_NAME .. "!", "DermaLarge", textx, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
+		local width = draw.SimpleText( stars .. " " .. STARS_NAME .. " - " .. props .. " " .. SCORE_NAME .. "!", "DermaLarge", textx, y + h / 2, COLOUR_BLACK, TEXT_ALIGN_RIGHT, TEXT_ALIGN_CENTER )
 		local colour = COLOUR_NEGATIVE
 		local add = ply:GetScore() - ply.LastProps
 		if ( progress < 1 and add != 0 ) then
@@ -221,7 +224,7 @@ if ( CLIENT ) then
 		-- Get a list of key: ply, value: props - to be ordered below
 		local order = {}
 		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
-			order[ply] = ply:GetScore()
+			order[ply] = ply:GetPlacingScore()
 			if ( last ) then
 				order[ply] = ply.LastProps or 0
 			end

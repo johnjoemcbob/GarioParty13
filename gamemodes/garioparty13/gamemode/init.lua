@@ -27,6 +27,13 @@ resource.AddWorkshop( WORKSHOP_ID ) -- This Content
 resource.AddWorkshop( "752655103" ) -- Goose
 resource.AddWorkshop( "331841113" ) -- Civ
 
+-- Net
+util.AddNetworkString( NET_INITJOINSERVER )
+
+net.Receive( NET_INITJOINSERVER, function( len, ply )
+	hook.Run( "PlayerFullLoad", self, ply )
+end )
+
 ------------------------
   -- Gamemode Hooks --
 ------------------------

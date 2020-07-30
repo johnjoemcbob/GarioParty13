@@ -38,6 +38,11 @@ end
 function GM:HUDPaint()
 	
 end
+
+hook.Add( "InitPostEntity", HOOK_PREFIX .. "InitPostEntity", function()
+	net.Start( NET_INITJOINSERVER )
+	net.SendToServer()
+end )
 -------------------------
   -- /Gamemode Hooks --
 -------------------------

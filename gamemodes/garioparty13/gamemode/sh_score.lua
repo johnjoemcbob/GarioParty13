@@ -8,6 +8,7 @@
 local HOOK_PREFIX = HOOK_PREFIX .. "Score_"
 
 SCORE_NAME			= "Props"
+STARS_NAME			= "Stars"
 SCORE_SPACE_ADD		= 3
 SCORE_SPACE_REMOVE	= -3
 SCORE_WIN			= 5
@@ -17,6 +18,12 @@ Score = Score or {}
 local meta = FindMetaTable( "Player" )
 function meta:GetScore()
 	return self:GetNWInt( "OverallScore", 0 )
+end
+function meta:GetStars()
+	return self:GetNWInt( "Stars", 0 )
+end
+function meta:GetPlacingScore()
+	return ( self:GetStars() + ( self:GetScore() / 100 ) )
 end
 if ( SERVER ) then
 	function meta:AddScore( add, novisual )
@@ -32,6 +39,34 @@ if ( SERVER ) then
 			end
 		return change
 	end
+
+	function meta:SetStars( stars )
+		if ( !self or !self:IsValid() ) then return end -- Player might leave server
+
+		self:SetNWInt( "Stars", stars )
+	end
+end
+
+function Score:SetStars( stars )
+	for ply, stars in pairs( stars ) do
+		ply:SetStars( stars )
+	end
+end
+
+function Score:GetPlacings()
+	local placings = {}
+		local scores = {}
+			for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+				scores[v] = v:GetPlacingScore()
+			end
+		local placing = 1
+		for ply, score in SortedPairsByValue( scores, true ) do
+			placings[placing] = ply
+
+			placing = placing + 1
+			if ( placing > 3 ) then break end
+		end
+	return placings
 end
 
 -- Net

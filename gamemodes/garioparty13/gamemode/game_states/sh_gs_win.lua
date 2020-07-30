@@ -43,17 +43,7 @@ GM.AddGameState( STATE_WIN, {
 		end
 
 		-- Calculate winners
-		self.Winners = {}
-			local scores = {}
-				for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
-					scores[v] = v:GetScore()
-				end
-			local placing = 1
-			for ply, score in SortedPairsByValue( scores, true ) do
-				self.Winners[placing] = ply
-				placing = placing + 1
-				if ( placing > 3 ) then break end
-			end
+		self.Winners = Score:GetPlacings()
 
 		-- Timer to reset back to lobby
 		timer.Simple( TIME_RESETTOLOBBY, function()
@@ -160,7 +150,7 @@ hook.Add( "HUDPaint", HOOK_PREFIX .. STATE_WIN .. "_HUDPaint", function()
 			surface.SetFont( font )
 			local tw, th = surface.GetTextSize( "HEY" )
 		for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
-			draw.SimpleText( v:Nick() .. ": " .. v:GetScore(), font, x, y - ( h + between * 2 ) * ( k - 1 ) / ( #PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) + 1 ), COLOUR_BLACK, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM )	
+			draw.SimpleText( v:Nick() .. ": " .. v:GetStars() .. " " .. STARS_NAME .. " & " .. v:GetScore() .. " " .. SCORE_NAME, font, x, y - ( h + between * 2 ) * ( k - 1 ) / ( #PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) + 1 ), COLOUR_BLACK, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM )	
 		end
 
 		-- Timer

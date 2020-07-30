@@ -64,9 +64,10 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. STATE_BOARD .. "PostDrawOp
 		render.ClearDepth()
 
 		-- Render background scene
-		Board.Scene = LoadScene( "city.json" ) -- TODO TEMP TESTING
+		--Board.Scene = LoadScene( "city.json" ) print( "reloading every frame" ) -- TODO TEMP TESTING
 		render.SetLightingMode( 2 )
-			RenderScene( Board.Scene, GP13_BOARD_POS + Vector( 2, 3.25, 0 ) * GP13_BOARD_SCALE )
+			Board.OriginPos = GP13_BOARD_POS + Vector( 2, 3.25, 0 ) * GP13_BOARD_SCALE
+			RenderScene( Board.Scene, Board.OriginPos )
 		render.SetLightingMode( 0 )
 
 		-- Render board spaces

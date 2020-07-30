@@ -237,8 +237,10 @@ function Turn:LandOnSpace()
 		elseif ( type == SPACE_TYPE_NEGATIVE ) then
 			-- Remove props
 			ply:AddScore( SCORE_SPACE_REMOVE )
+		elseif ( type == SPACE_TYPE_INVEST ) then
+			-- Logic is in sh_board, this should be refactored to all be there!
 		else
-			print( "Warning: Unregistered space type: ", type )
+			print( "Warning: Unregistered space type in sh_turn: ", type )
 		end
 	end
 end

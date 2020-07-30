@@ -147,9 +147,10 @@ function Board:OnPassSpace( data )
 	local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
 
 	local canmove = true
-		if ( self.SpecialSpaces[data.Type] ) then
+		if ( self.SpecialSpaces[data.Type] and self.SpecialSpaces[data.Type].OnPass ) then
 			-- Start custom space logic
 			Board:BroadcastSpecialSpace( ply, space )
+			Board.SpecialEndTurn = false
 			Turn.State = TURN_SPECIAL
 			canmove = false
 		end
@@ -161,9 +162,10 @@ function Board:OnLandSpace( data )
 	local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
 
 	local shouldend = true
-		if ( self.SpecialSpaces[data.Type] ) then
+		if ( self.SpecialSpaces[data.Type] and self.SpecialSpaces[data.Type].OnLand ) then
 			-- Start custom space logic
 			Board:BroadcastSpecialSpace( ply, space )
+			Board.SpecialEndTurn = true
 			Turn.State = TURN_SPECIAL
 			shouldend = false
 		end
@@ -231,11 +233,16 @@ if ( SERVER ) then
 		local ply = Turn.Current
 		local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
 		local type = Board.Data[space.x][space.y].Type
+		print( type )
 		local advance = Board.SpecialSpaces[type]:ServerReceive( ply, space )
 		Board:BroadcastSpecialSpaceData( space )
 
 		if ( advance ) then
-			Turn.State = TURN_MOVE
+			if ( Board.SpecialEndTurn ) then
+				Turn.Finished = true
+			else
+				Turn.State = TURN_MOVE
+			end
 		end
 	end )
 
@@ -285,15 +292,34 @@ if ( CLIENT ) then
 	end )
 end
 
+-- Gamemode hooks
+hook.Add( "PlayerFullLoad", HOOK_PREFIX .. "PlayerFullLoad", function()
+	-- Send current player positions
+	-- for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+	-- 	local pos = ply:GetNWVector( "BoardPos" )
+	-- 	Board:BroadcastMove( ply, pos, 0 )
+	-- end
+
+	-- Send update to late joining players
+	for x, col in pairs( Board.Data ) do
+		for y, data in pairs( col ) do
+			if ( Board.SpecialSpaces[data.Type] ) then
+				Board:BroadcastSpecialSpaceData( Vector( x, y ) )
+			end
+		end
+	end
+end )
+
 if ( CLIENT ) then
 	hook.Add( "Tick", HOOK_PREFIX .. "Tick", function()
 		if ( GAMEMODE:GetStateName() == STATE_BOARD ) then
 			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 				-- Create player avatar
 				if ( !ply.BoardModel or !ply.BoardModel:IsValid() ) then
-					local pos = GP13_BOARD_POS
-					local ang = Angle( 0, 0, 0 )
-					ply.BoardModel = GAMEMODE.AddAnim( ply:GetModel(), "run_all_01", pos, ang, 1 )
+					--local pos = GP13_BOARD_POS
+					local pos = Board:GetTargetPos( ply )
+					Board:CreateBoardModel( ply )
+					ply.BoardModel:SetPos( pos )
 				end
 
 				-- Target position and angle
@@ -364,9 +390,14 @@ if ( CLIENT ) then
 		end
 	end )
 
+	function Board:CreateBoardModel( ply )
+		local pos = Vector( 0, 0, 0 )
+		local ang = Angle( 0, 0, 0 )
+		ply.BoardModel = GAMEMODE.AddAnim( ply:GetModel(), "run_all_01", pos, ang, 1 )
+	end
+
 	function Board:GetTargetPos( ply )
 		if ( !ply.BoardTargetPos ) then
-			--ply.BoardTargetPos = Vector( 1, 1 )
 			Board:Move( ply, Vector( 1, 1 ) )
 		end
 
@@ -393,7 +424,10 @@ if ( CLIENT ) then
 	end
 
 	function Board:Move( ply, pos )
-		if ( !ply or !ply.BoardModel ) then return end
+		if ( !ply or !ply:IsValid() ) then return end
+		if ( !ply.BoardModel ) then
+			Board:CreateBoardModel( ply )
+		end
 
 		-- Unregister from old space
 		if ( ply.BoardTargetPos ) then
@@ -414,6 +448,36 @@ if ( CLIENT ) then
 	function Board:Render()
 		-- Note: Board scene is rendered from sh_gs_board.lua state
 		render.SetLightingMode( 2 )
+			-- Initialize the render
+			for type, special in pairs( Board.SpecialSpaces ) do
+				if ( special.InitRender ) then
+					special:InitRender()
+				end
+			end
+
+			-- Player models
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+				if ( ply.BoardModel ) then
+					ply.BoardModel:DrawModel()
+					
+					-- Draw remaining moves
+					if ( Turn.Current == ply and Board.Moves and Board.Moves > 0 ) then
+						local num = Board.Moves
+						local ang = Angle( 0, -90, 90 )
+						local pos = ply.BoardModel:GetPos() + Vector( 0, 0, 50 )
+							pos = pos + Vector( 0, 0, 120 )
+							pos = pos + Vector( 0, 0, 1 ) * math.sin( CurTime() ) * 10
+							--pos = pos + ang:Forward() * 6 * DICE_SCALE
+						local ang = ang
+							--ang:RotateAroundAxis( ang:Up(), 90 )
+							--ang:RotateAroundAxis( ang:Forward(), 90 )
+						cam.Start3D2D( pos, ang, 1 )
+							draw.SimpleTextOutlined( num, "DermaLarge", 0, 0, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, COLOUR_BLACK )
+						cam.End3D2D()
+					end
+				end
+			end
+
 			-- Board spaces
 			for x, ys in pairs( Board.Data ) do
 				for y, space in pairs( ys ) do
@@ -452,26 +516,12 @@ if ( CLIENT ) then
 					)
 				end
 			end
-
-			-- Player models
-			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
-				if ( ply.BoardModel ) then
-					ply.BoardModel:DrawModel()
-					
-					-- Draw remaining moves
-					if ( Turn.Current == ply and Board.Moves and Board.Moves > 0 ) then
-						local num = Board.Moves
-						local ang = Angle( 0, -90, 90 )
-						local pos = ply.BoardModel:GetPos() + Vector( 0, 0, 50 )
-							pos = pos + Vector( 0, 0, 120 )
-							pos = pos + Vector( 0, 0, 1 ) * math.sin( CurTime() ) * 10
-							--pos = pos + ang:Forward() * 6 * DICE_SCALE
-						local ang = ang
-							--ang:RotateAroundAxis( ang:Up(), 90 )
-							--ang:RotateAroundAxis( ang:Forward(), 90 )
-						cam.Start3D2D( pos, ang, 1 )
-							draw.SimpleTextOutlined( num, "DermaLarge", 0, 0, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, 1, COLOUR_BLACK )
-						cam.End3D2D()
+			-- Render special stuff after, on top
+			-- [last due to possible 3d2ds]
+			for x, ys in pairs( Board.Data ) do
+				for y, space in pairs( ys ) do
+					if ( Board.SpecialSpaces[space.Type] and Board.SpecialSpaces[space.Type].Render ) then
+						Board.SpecialSpaces[space.Type]:Render( space, x, y )
 					end
 				end
 			end
@@ -489,7 +539,16 @@ end
 
 Board.SpecialSpaces = {}
 Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
+	OnPass = true,
+	OnLand = true,
 	ClientStart = function( self, ply, space )
+		-- Close any copies
+		if ( LocalPlayer().InvestUI and LocalPlayer().InvestUI:IsValid() ) then
+			LocalPlayer().InvestUI:Close()
+			LocalPlayer().InvestUI:Remove()
+			LocalPlayer().InvestUI = nil
+		end
+
 		-- Store arguments for later
 		self.Player = ply
 		self.Space = space
@@ -555,7 +614,7 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 					tab.Data[space.x][space.y][ply].Add = tab.Data[space.x][space.y][ply].Add or 0
 	
 					-- Setup for sorting by investment below
-					tab.Data[space.x][space.y][ply].Current = math.random( -100, 100 ) -- TODO TEMP REMOVE
+					--tab.Data[space.x][space.y][ply].Current = math.random( -100, 100 ) -- TODO TEMP REMOVE
 					ply.Score = tab.Data[space.x][space.y][ply].Current
 				end
 			local index = 0
@@ -690,34 +749,174 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 			ply:AddScore( -add )
 			self.Data[space.x][space.y][ply].Current = self.Data[space.x][space.y][ply].Current + add
 
-			-- Delay to show updated list
+			-- If there's a change, check all servers and rankings to get player scores
+			self:CheckStars()
+
+			-- Delay to show updated list (otherwise returning true does TURN_MOVE immediately)
 			timer.Simple( 1, function()
-				Turn.State = TURN_MOVE
+				if ( Board.SpecialEndTurn ) then
+					Turn.Finished = true
+				else
+					Turn.State = TURN_MOVE
+				end
 			end )
+
 			return false
 		end
 
 		return true
 	end,
 
+	InitRender = function( self )
+		self.Index = 1
+	end,
+	Render = function( self, data, x, y )
+		local index = self.Index
+
+		-- Get server data
+		render.SetLightingMode( 0 )
+		local rank = self:GetRankingForServer( x, y )
+			--rank = math.ceil( math.max( 0, math.sin( CurTime() ) * 4 ) )
+		local owner = self:GetOwnerOfServer( x, y )
+
+		-- Get scene data
+		local model = "models/props_phx/huge/tower.mdl"
+		local detail = Board.Scene["server" .. index]
+		local pos = Board.OriginPos
+			pos = pos + detail[2]
+		local scale = Vector( 1, 1, 1 ) * 0.07
+			pos = pos + Vector( 0, 0, -450 ) * scale.x * ( 4 - rank )
+
+		-- Render the server model sized by its ranking
+		GAMEMODE.RenderCachedModel(
+			model,
+			pos,
+			detail[3],
+			scale,
+			detail.Material,
+			col
+		)
+
+		-- Show server label 3d2d UI
+		render.SetLightingMode( 0 )
+			local pos = pos + Vector( 0, 0, 3500 * scale.x )
+			local scale = scale.x * 7
+			local ang = Angle( 0, -90, 90 )
+				pos = pos + ang:Forward() * 0 * scale
+			cam.Start3D2D( pos, ang, scale )
+				draw.NoTexture()
+				local lines = {
+					"Server",
+					"Rank: " .. rank,
+					"Owner: " .. owner,
+				}
+				local y = 0
+				for k, line in pairs( lines ) do
+					draw.SimpleTextOutlined(
+						line, "MinigameTitle",
+						0, y,
+						COLOUR_WHITE,
+						TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
+						1, COLOUR_BLACK
+					)
+					y = y + 64
+				end
+			cam.End3D2D()
+		render.SetLightingMode( 2 )
+
+		self.Index = ( self.Index or 1 ) + 1
+	end,
+
+	-- Calculate score based on the server donations and rankings
+	CheckStars = function( self )
+		-- Put all player scores to zero again
+		local stars = {}
+			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+				stars[ply] = 0
+			end
+
+		-- For each data point
+		for x, col in pairs( self.Data ) do
+			for y, players in pairs( col ) do
+				-- Check for top donator
+				local top = nil
+					local max = -1
+					for ply, data in pairs( players ) do
+						if ( data.Current > max ) then
+							top = ply
+							max = data.Current
+						end
+					end
+				if ( top ) then
+					stars[top] = stars[top] + self:GetRankingForServer( x, y )
+				end
+			end
+		end
+		print( "checking stars now..." )
+		PrintTable( self.Data )
+		PrintTable( stars )
+
+		-- Notify the score system of the check
+		Score:SetStars( stars )
+	end,
+	GetRankingForServer = function( self, x, y )
+		local ranking = 1
+			local total = 0
+				if ( self.Data and self.Data[x] and self.Data[x][y] ) then
+					for ply, data in pairs( self.Data[x][y] ) do
+						total = total + data.Current
+					end
+				end
+			if ( total > 30 ) then
+				ranking = 4
+			elseif ( total > 20 ) then
+				ranking = 3
+			elseif ( total > 10 ) then
+				ranking = 2
+			end
+		return ranking
+	end,
+	GetOwnerOfServer = function( self, x, y )
+		local owner = "None"
+			if ( self.Data and self.Data[x] and self.Data[x][y] ) then
+				local top = nil
+					local max = -1
+					local players = self.Data[x][y]
+					for ply, data in pairs( players ) do
+						if ( data.Current > max ) then
+							top = ply
+							max = data.Current
+						end
+					end
+				if ( owner ) then
+					owner = top:Nick()
+				end
+			end
+		return owner
+	end,
+
 	-- Broadcast interaction back to all players, and late joiners
 	UpdateAllPlayers = function( self )
+		self.Data = self.Data or {}
 		net.WriteTable( self.Data )
 	end,
-	ReceiveUpdate = function( self )
+	ReceiveUpdate = function( self ) -- Client
 		local data = net.ReadTable()
 
+		-- Store the received data please!
 		self.Data = data
 
 		-- Late delete if still exists
-		LocalPlayer().InvestUI:PopulateList( true )
-		timer.Simple( 1, function()
-			local ui = LocalPlayer().InvestUI
-			if ( ui and ui:IsValid() ) then
-				ui:Remove()
-				LocalPlayer().InvestUI = nil
-			end
-		end )
+		if ( LocalPlayer().InvestUI and LocalPlayer().InvestUI:IsValid() ) then
+			LocalPlayer().InvestUI:PopulateList( true )
+			timer.Simple( 1, function()
+				local ui = LocalPlayer().InvestUI
+				if ( ui and ui:IsValid() ) then
+					ui:Remove()
+					LocalPlayer().InvestUI = nil
+				end
+			end )
+		end
 	end,
 }
 

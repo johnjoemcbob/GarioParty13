@@ -96,6 +96,7 @@ SOUND_PLACINGCHANGE = {
 }
 
 -- Net Strings
+NET_INITJOINSERVER = HOOK_PREFIX .. "Net_InitJoinServer"
 
 -- Resources
 Sound_OrchestraHit = Sound( "orch.wav" )
