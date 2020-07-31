@@ -107,6 +107,10 @@ GM.AddGame( "Teeth", "Default", {
 				self:Win( plys[math.random( 1, #plys )] )
 			end
 		end
+
+		if ( CLIENT ) then
+			gui.EnableScreenClicker( true )
+		end
 	end,
 	PlayerThink = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!

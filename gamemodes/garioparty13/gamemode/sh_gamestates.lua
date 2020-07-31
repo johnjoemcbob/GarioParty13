@@ -77,6 +77,8 @@ if ( CLIENT ) then
 			GAMEMODE:SetState( newstate )
 			GAMEMODE.GameStates[newstate]:OnStart()
 		end )
+
+		Scoreboard:Hide()
 	end )
 end
 

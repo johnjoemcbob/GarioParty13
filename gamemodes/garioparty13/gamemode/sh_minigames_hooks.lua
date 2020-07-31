@@ -121,6 +121,10 @@ if ( CLIENT ) then
 
 	hook.Add( "HUDPaint", HOOK_PREFIX .. "HUDPaint", function()
 		local game = LocalPlayer():GetGame()
+
+		-- Be safe!
+		draw.NoTexture()
+		surface.SetDrawColor( COLOUR_WHITE )
 	
 		-- Game specific
 		if ( game and game.PreHUDPaint ) then

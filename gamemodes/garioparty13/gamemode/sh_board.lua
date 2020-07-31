@@ -880,7 +880,7 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 						end
 					end
 				if ( top ) then
-					stars[top] = stars[top] + self:GetRankingForServer( x, y )
+					stars[top] = ( stars[top] or 0 ) + ( self:GetRankingForServer( x, y ) or 0 )
 				end
 			end
 		end

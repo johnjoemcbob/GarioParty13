@@ -41,6 +41,14 @@ function LoadTableFromJSON( path, name )
 	return tab
 end
 
+function SaveJSON( path, name, data )
+	local path = path .. name
+		if ( !string.find( path, ".json" ) ) then
+			path = path .. ".json"
+		end
+	file.Write( path, data )
+end
+
 function GetColourHighlight( colour, amount )
 	if ( !amount ) then amount = 10 end
 	return Color(

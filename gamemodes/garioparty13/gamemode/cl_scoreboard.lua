@@ -74,21 +74,21 @@ function Scoreboard:RenderPanel( ply, placing, showall, x, y )
 	draw.NoTexture()
 
 	-- Create background if doesn't exist
-	if ( !ply.Background or !ply.Background.Index ) then
-		ply.Background = {}
-		ply.Background.Colour = ply:GetColour()
-		ply.Background.Highlight = GetColourHighlight( ply.Background.Colour )
-		ply.Background.Index = math.random( 1, #GAMEMODE.Backgrounds )
-		GAMEMODE.Backgrounds[ply.Background.Index].Init( ply.Background )
+	if ( !ply.ScoreBackground or !ply.ScoreBackground.Index ) then
+		ply.ScoreBackground = {}
+		ply.ScoreBackground.Colour = ply:GetColour()
+		ply.ScoreBackground.Highlight = GetColourHighlight( ply.ScoreBackground.Colour )
+		ply.ScoreBackground.Index = math.random( 1, #GAMEMODE.Backgrounds )
+		GAMEMODE.Backgrounds[ply.ScoreBackground.Index].Init( ply.ScoreBackground )
 	end
 
 	-- Draw background box
 	local function mask()
-		surface.SetDrawColor( ply.Background.Colour )
+		surface.SetDrawColor( ply.ScoreBackground.Colour )
 		surface.DrawRect( x, y, w, h )
 	end
 	local function inner()
-		GAMEMODE.Backgrounds[ply.Background.Index].Render( ply.Background, w, h )
+		GAMEMODE.Backgrounds[ply.ScoreBackground.Index].Render( ply.ScoreBackground, w, h )
 	end
 	draw.StencilBasic( mask, inner )
 	surface.SetDrawColor( COLOUR_WHITE )

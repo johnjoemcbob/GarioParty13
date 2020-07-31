@@ -41,7 +41,7 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 					"Screencheat",
 					"Rooftop Rampage",
 					"Time Travel",
-					"Donut County",
+					--"Donut County",
 					"Fly High",
 					--"Boats",
 				}
