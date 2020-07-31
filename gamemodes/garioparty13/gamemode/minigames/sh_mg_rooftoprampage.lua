@@ -316,7 +316,7 @@ GM.AddGame( NAME, "Goose", {
 		-- Top down view!
 		local angles = Angle( 90, 0, 0 )
 		local view = {}
-		view.origin = Vector( -2220, -2780, 3800 )
+		view.origin = Vector( -2220, -2780, 3200 )
 		view.angles = angles
 		view.fov = 90
 		view.drawviewer = true

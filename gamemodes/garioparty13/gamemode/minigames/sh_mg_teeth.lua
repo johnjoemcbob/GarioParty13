@@ -91,12 +91,7 @@ GM.AddGame( "Teeth", "Default", {
 			end
 		end
 
-		-- TODO TEMP REMOVE
-		timer.Simple( math.random( 5.1, 7 ) * 2, function()
-			if ( ply:GetGameName() == "Teeth" ) then
-				self:Win( ply )
-			end
-		end )
+		self.StartTime = CurTime()
 	end,
 	PlayerSpawn = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -105,6 +100,13 @@ GM.AddGame( "Teeth", "Default", {
 	Think = function( self )
 		-- Runs on CLIENT and SERVER realms!
 		-- Each update tick for this game, no reference to any player
+
+		if ( self.StartTime + 10 <= CurTime() ) then
+			local plys = PlayerStates:GetPlayers( PLAYER_STATE_PLAY )
+			if ( #plys > 0 ) then
+				self:Win( plys[math.random( 1, #plys )] )
+			end
+		end
 	end,
 	PlayerThink = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -130,6 +132,10 @@ GM.AddGame( "Teeth", "Default", {
 	end,
 	PreDrawTranslucentRenderables = function( self )
 		if ( !LocalPlayer().BackgroundData ) then return end
+
+		-- Hide, needed for weird player models!
+		render.Clear( 0, 0, 0, 255 )
+		render.ClearDepth()
 
 		local pos = LocalPlayer():GetPos()
 		pos = POS

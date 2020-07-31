@@ -211,15 +211,20 @@ GM.AddGame( NAME, "Default", {
 		if ( SERVER ) then
 			-- Spawn points
 			local possible = table.shallowcopy( SPAWNS )
+			local success = false
 			while ( #possible > 0 ) do
 				local index = math.random( 1, #possible )
-				local pos = possible[index]
-				local success = ply:TrySpawn( pos )
+				local pos = possible[index] + Vector( 0, 0, 5 )
+				success = ply:TrySpawn( pos )
 				if ( success ) then
 					break
 				else
 					table.RemoveByValue( possible, pos )
 				end
+			end
+			if ( !success ) then
+				-- Failsafe!
+				ply:SetPos( SPAWNS[1] + Vector( 0, 0, 10 ) )
 			end
 
 			ply:SetNWBool( "Stuck", false )

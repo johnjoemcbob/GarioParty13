@@ -233,9 +233,10 @@ if ( SERVER ) then
 		local ply = Turn.Current
 		local space = ply:GetNWVector( "BoardPos", Vector( 1, 1 ) )
 		local type = Board.Data[space.x][space.y].Type
-		print( type )
-		local advance = Board.SpecialSpaces[type]:ServerReceive( ply, space )
-		Board:BroadcastSpecialSpaceData( space )
+		if ( Board.SpecialSpaces[type] ) then -- TODO real fix for this please, should never occur?
+			local advance = Board.SpecialSpaces[type]:ServerReceive( ply, space )
+			Board:BroadcastSpecialSpaceData( space )
+		end
 
 		if ( advance ) then
 			if ( Board.SpecialEndTurn ) then
@@ -245,6 +246,16 @@ if ( SERVER ) then
 			end
 		end
 	end )
+
+	function Board:SendSpecialSpaceData( ply, space )
+		local type = self.Data[space.x][space.y].Type
+
+		-- Communicate to all clients
+		net.Start( NETSTRING_SPECIALSPACE_DATA )
+			net.WriteVector( space )
+			self.SpecialSpaces[type]:UpdateAllPlayers()
+		net.Send( ply )
+	end
 
 	function Board:BroadcastSpecialSpaceData( space )
 		local type = self.Data[space.x][space.y].Type
@@ -293,7 +304,7 @@ if ( CLIENT ) then
 end
 
 -- Gamemode hooks
-hook.Add( "PlayerFullLoad", HOOK_PREFIX .. "PlayerFullLoad", function()
+hook.Add( "PlayerFullLoad", HOOK_PREFIX .. "PlayerFullLoad", function( ply )
 	-- Send current player positions
 	-- for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 	-- 	local pos = ply:GetNWVector( "BoardPos" )
@@ -304,7 +315,7 @@ hook.Add( "PlayerFullLoad", HOOK_PREFIX .. "PlayerFullLoad", function()
 	for x, col in pairs( Board.Data ) do
 		for y, data in pairs( col ) do
 			if ( Board.SpecialSpaces[data.Type] ) then
-				Board:BroadcastSpecialSpaceData( Vector( x, y ) )
+				Board:SendSpecialSpaceData( ply, Vector( x, y ) )
 			end
 		end
 	end
@@ -561,7 +572,7 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 		local frame = vgui.Create( "DFrame" )
 		frame:SetSize( w, h )
 		frame:Center()
-		frame:SetTitle( "Invest" )
+		frame:SetTitle( "Donate" )
 		frame:ShowCloseButton( false )
 		function frame:OnClose()
 			tab:ClientStop( ply, space )
@@ -621,17 +632,19 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 			for k, ply in SortedPairsByMemberValue( players, "Score", true ) do
 				-- Store the top player
 				if ( index == 0 ) then
-					if ( !tab.Owner ) then
+					if ( !tab.Owner and ply.Score != 0 ) then
 						tab.Owner = ply
 					end
 
 					if ( showchange ) then
 						ply:EmitSound( SOUND_PLACINGCHANGE[math.random( 1, #SOUND_PLACINGCHANGE )] )
 
-						if ( ply != tab.Owner ) then
-							self.Label:SetText( "New owner is " .. ply:Nick() .. ", sorry " .. tab.Owner:Nick() .. "!" )
+						if ( !tab.Owner ) then
+							self.Label:SetText( "No owner..." )
+						elseif ( ply != tab.Owner ) then
+							self.Label:SetText( "The owner is " .. ply:Nick() .. ", sorry " .. tab.Owner:Nick() .. "!" )
 						else
-							self.Label:SetText( ply:Nick() .. " remains the owner!" )
+							self.Label:SetText( ply:Nick() .. " is the owner!" )
 						end
 					end
 				end
@@ -840,7 +853,7 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 			for y, players in pairs( col ) do
 				-- Check for top donator
 				local top = nil
-					local max = -1
+					local max = 0
 					for ply, data in pairs( players ) do
 						if ( data.Current > max ) then
 							top = ply
@@ -852,9 +865,6 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 				end
 			end
 		end
-		print( "checking stars now..." )
-		PrintTable( self.Data )
-		PrintTable( stars )
 
 		-- Notify the score system of the check
 		Score:SetStars( stars )
@@ -880,7 +890,7 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 		local owner = "None"
 			if ( self.Data and self.Data[x] and self.Data[x][y] ) then
 				local top = nil
-					local max = -1
+					local max = 0
 					local players = self.Data[x][y]
 					for ply, data in pairs( players ) do
 						if ( data.Current > max ) then
@@ -888,7 +898,7 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 							max = data.Current
 						end
 					end
-				if ( owner ) then
+				if ( top and top:IsValid() ) then
 					owner = top:Nick()
 				end
 			end

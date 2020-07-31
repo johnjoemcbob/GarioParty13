@@ -65,6 +65,9 @@ GM.AddGame( NAME, "Default", {
 		-- ply
 
 		if ( SERVER ) then
+			-- Set player as close by to help with driving? or something? idk
+			ply:SetPos( Vector( 1298, -1585, 1600 ) )
+
 			ply.Hole = ents.Create( "gp13_donuthole" )
 				ply.Hole:SetPos( Vector( 1298, -1585, 1200 ) )
 				ply.Hole:SetOwner( ply )
@@ -177,6 +180,18 @@ GM.AddGame( NAME, "Default", {
 	end,
 	PreDrawSkyBox = function( self )
 		return true
+	end,
+	CalcView = function( self, ply, pos, angles, fov )
+		-- Third person view!
+		local angles = LocalPlayer():EyeAngles()
+		local view = {}
+		view.origin = pos-(angles:Forward()*150) + Vector( 0, 0, 1 )*0
+		view.angles = angles
+		view.fov = fov
+		view.drawviewer = true
+		view.zfar = 1000
+
+		return view
 	end,
 	PlayerLeave = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!

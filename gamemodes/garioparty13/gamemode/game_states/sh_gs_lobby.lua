@@ -97,34 +97,6 @@ GM.AddGameState( STATE_LOBBY, {
 			self.Panel.Background = math.random( 1, #GAMEMODE.Backgrounds )
 			GAMEMODE.Backgrounds[self.Panel.Background].Init( self.Panel )
 		function self.Panel:Paint( w, h )
-			local function drawtitle( text, font, x, y, col, outwidth, outcol )
-				-- Split to characters
-				local chars = string.Split( text, "" )
-				-- Get overall width first time through
-				local w, h = 0, 0
-				for k, char in pairs( chars ) do
-					surface.SetFont( font )
-					local tw, th = surface.GetTextSize( char )
-					w = w + tw
-					h = th
-				end
-		
-				-- Then render based on this center pos calc
-				local gpos = 0
-				for k, char in pairs( chars ) do
-					local col = GetLoopedColour( k )
-					local charx = x - w / 2 + math.cos( CurTime() * 2 + k ) * 2
-					local chary = y + math.sin( CurTime() * 2 + k ) * 16
-					local tw, th = draw.SimpleTextOutlined( char, font, charx, chary, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, outwidth, outcol )
-					if ( k == 1 ) then
-						gpos = Vector( charx, chary )
-					end
-					x = x + tw
-				end
-		
-				return gpos
-			end
-		
 			-- Draw background
 			surface.SetDrawColor( self.Colour )
 			surface.DrawRect( 0, 0, w, h )
@@ -139,19 +111,10 @@ GM.AddGameState( STATE_LOBBY, {
 			local w = ScrW() / 8
 			local h = ScrH() / 16
 			local between = 96
-			local outlinewidth = 2
+			local outlinewidth = 4
 			local colour		= COLOUR_WHITE
 			local outlinecolour	= COLOUR_BLACK
-			local gpos = drawtitle( "Gario Party 13!", "GarioParty", x, y, colour, outlinewidth, outlinecolour )
-
-			-- G icon
-			local w = 128 + 16
-			local h = w
-			local x = gpos.x - w / 2
-			local y = gpos.y - h / 2.5
-			surface.SetDrawColor( COLOUR_WHITE )
-			surface.SetMaterial( MAT_LOGO )
-			surface.DrawTexturedRect( x, y, w, h )
+			local gpos = DrawTitle( "Gario Party 13!", "GarioParty", x, y, colour, outlinewidth, outlinecolour )
 
 			-- Waiting for players
 			local x = ScrW() / 2
@@ -284,6 +247,51 @@ GM.AddGameState( STATE_LOBBY, {
 		end
 	end,
 })
+
+if ( CLIENT ) then
+	function DrawTitle( text, font, x, y, col, outwidth, outcol )
+		-- Split to characters
+		local chars = string.Split( text, "" )
+		-- Get overall width first time through
+		local w, h = 0, 0
+		for k, char in pairs( chars ) do
+			surface.SetFont( font )
+			local tw, th = surface.GetTextSize( char )
+			w = w + tw
+			h = th
+		end
+
+		-- Then render based on this center pos calc
+		local gpos = 0
+		for k, char in pairs( chars ) do
+			local col = GetLoopedColour( k )
+			local charx = x - w / 2 + math.cos( CurTime() * 2 + k ) * 2
+			local chary = y + math.sin( CurTime() * 2 + k ) * 16
+			local tw, th = draw.SimpleTextOutlined( char, font, charx, chary, col, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, outwidth, outcol )
+			if ( k == 1 ) then
+				gpos = Vector( charx, chary )
+			end
+			x = x + tw
+		end
+
+		-- G icon border
+		local w = 128 + 16
+		local h = w
+		local x = gpos.x - w / 2
+		local y = gpos.y - h / 2.5
+		local outwidth = outwidth * 2
+		surface.SetDrawColor( COLOUR_BLACK )
+		surface.SetMaterial( MAT_LOGO )
+		surface.DrawTexturedRect( x - outwidth, y - outwidth / 1.25, w + outwidth * 2, h + outwidth * 2 )
+
+		-- G icon
+		surface.SetDrawColor( COLOUR_WHITE )
+		surface.SetMaterial( MAT_LOGO )
+		surface.DrawTexturedRect( x, y, w, h )
+
+		return gpos
+	end
+end
 
 if ( SERVER ) then
 	-- Return to lobby if there are no players connected

@@ -31,7 +31,7 @@ resource.AddWorkshop( "331841113" ) -- Civ
 util.AddNetworkString( NET_INITJOINSERVER )
 
 net.Receive( NET_INITJOINSERVER, function( len, ply )
-	hook.Run( "PlayerFullLoad", self, ply )
+	hook.Run( "PlayerFullLoad", ply )
 end )
 
 ------------------------

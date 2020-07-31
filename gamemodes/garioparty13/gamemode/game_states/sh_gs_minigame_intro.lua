@@ -43,7 +43,7 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 					"Time Travel",
 					"Donut County",
 					"Fly High",
-					"Boats",
+					--"Boats",
 				}
 			end
 			local ind = math.random( 1, #game_pool )
@@ -214,6 +214,7 @@ function MinigameIntro:MoveReady( ply, dir )
 	if ( SERVER ) then
 		-- Store on server (& self local)
 		local old = self.Ready[ply]
+		if ( !old ) then return end -- Spectator
 		--self:SetReady( ply, math.Clamp( old + dir, READY_NONE, READY_PRACTICE ) )
 		self:SetReady( ply, math.Clamp( old + dir, READY_NONE, READY_REAL ) )
 
@@ -461,10 +462,14 @@ if ( CLIENT ) then
 		-- Test player icon
 		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			if ( ply and ply:IsValid() ) then
+				local model = ply:GetModel()
+					if ( model == "models/player.mdl" ) then
+						model = "models/player/kleiner.mdl" -- Weird error woops
+					end
 				local icon = vgui.Create( "DModelPanel", right )
 				--icon:SetSize( 200, 200 )
 				--icon:SetPos( rightx - twidth / 2, y + 64 )
-				icon:SetModel( ply:GetModel() )
+				icon:SetModel( model )
 				icon.Size = 64
 				function icon:LayoutEntity( Entity ) return end	-- Disable cam rotation
 				local headpos = icon.Entity:GetBonePosition(icon.Entity:LookupBone("ValveBiped.Bip01_Head1"))

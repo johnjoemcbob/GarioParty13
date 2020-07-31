@@ -124,6 +124,12 @@ function meta_ply:SetGame( game )
 			self:Spawn()
 		end
 		self:GetGame():PlayerSpawn( self )
+		-- timer.Simple( 0.5, function()
+		-- 	-- TODO TEMP
+		-- 	-- Trying to fix sometimes not spawning into first minigame properly,
+		-- 	-- Just retry a bit later :)
+		-- 	self:GetGame():PlayerSpawn( self )
+		-- end )
 		self.WonLastGame = false
 		self:SetNWInt( "Score", 0 )
 	end
@@ -193,6 +199,9 @@ function meta_ply:ShowFPSController()
 	if ( self.LastFPSController ) then
 		if ( SERVER ) then
 			self:SetMoveType( MOVETYPE_WALK )
+			if ( self:GetStateName() == PLAYER_STATE_PLAY ) then
+				self:UnSpectate()
+			end
 		end
 		self:SetPos( self.LastFPSController[1] )
 		self:SetEyeAngles( self.LastFPSController[2] )
@@ -234,6 +243,7 @@ if ( SERVER ) then
 	concommand.Add( "gp_drag", function( ply, cmd, args )
 		if ( ply:IsAdmin() ) then
 			for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
+				v:UnSpectate()
 				v:SetGame( ply:GetGameName() )
 			end
 		end

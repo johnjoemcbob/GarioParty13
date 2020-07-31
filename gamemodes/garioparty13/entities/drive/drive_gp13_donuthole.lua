@@ -21,55 +21,56 @@ drive.Register( "drive_gp13_donuthole",
 	-- Calculates the view when driving the entity
 	--
 	CalcView = function( self, view )
-		-- print( "calc view" )
-		--
-		-- Use the utility method on drive_base.lua to give us a 3rd person view
-		--
-		local idealdist = math.max( 2, self.Entity:BoundingRadius() / 2 ) * self.CameraDist
+	-- 	-- print( "calc view" )
+	-- 	--
+	-- 	-- Use the utility method on drive_base.lua to give us a 3rd person view
+	-- 	--
+	-- 	local idealdist = math.max( 2, self.Entity:BoundingRadius() / 2 ) * self.CameraDist
 
-		-- print( idealdist )
-		self:CalcView_ThirdPersonClamped( view, idealdist, 1, { self.Entity } )
+	-- 	-- print( idealdist )
+	-- 	--self:CalcView_ThirdPersonClamped( view, idealdist, 1, { self.Entity } )
 
-		-- view.origin = self.Entity:GetPos() + Vector( 0, 0, 100 )
-		view.angles.roll = 0
-		view.zfar = 1000
-	end,
-	CalcView_ThirdPersonClamped = function( self, view, dist, hullsize, entityfilter )
-		local eyeang = self.Player:EyeAngles()
-		-- eyeang.pitch = math.Clamp( eyeang.pitch, 50, 90 )
-		-- From -180->180 to new range
-		local min = 1
-		local max = 90
-		-- print( view.angles.p )
+	-- 	-- view.origin = self.Entity:GetPos() + Vector( 0, 0, 100 )
+	-- 	--view.angles.roll = 0
+	-- 	--view.zfar = 1000
+	-- end,
+	-- CalcView_ThirdPersonClamped = function( self, view, dist, hullsize, entityfilter )
+	-- 	local eyeang = self.Player:EyeAngles()
+	-- 	-- eyeang.pitch = math.Clamp( eyeang.pitch, 50, 90 )
+	-- 	-- From -180->180 to new range
+	-- 	local min = 1
+	-- 	local max = 90
+	-- 	-- print( view.angles.p )
 
-		-- INVERT HERE
-		-- eyeang.p = ( ( 1 - ( eyeang.p + 90 ) / 180 ) * ( max - min ) ) + min
-		eyeang.p = ( ( ( eyeang.p + 90 ) / 180 ) * ( max - min ) ) + min
+	-- 	-- INVERT HERE
+	-- 	-- eyeang.p = ( ( 1 - ( eyeang.p + 90 ) / 180 ) * ( max - min ) ) + min
+	-- 	eyeang.p = ( ( ( eyeang.p + 90 ) / 180 ) * ( max - min ) ) + min
 
-		-- Move the view backwards the size of the entity
-		local neworigin = view.origin + Vector( 0, 0, 15 ) - eyeang:Forward() * dist
+	-- 	-- Move the view backwards the size of the entity
+	-- 	local neworigin = view.origin + Vector( 0, 0, 15 ) - eyeang:Forward() * dist
 
-		if ( hullsize && hullsize > 0 ) then
-			-- Trace a hull (cube) from the old eye position to the new
-			local tr = util.TraceHull( {
-											start	= view.origin,
-											endpos	= neworigin,
-											mins	= Vector( hullsize, hullsize, hullsize ) * -1,
-											maxs	= Vector( hullsize, hullsize, hullsize ),
-											filter	= entityfilter
-										})
-			-- If we hit something then stop there
-			-- [ stops the camera going through walls ]						
-			if ( tr.Hit ) then
-				neworigin = tr.HitPos
-			end
-		end
+	-- 	if ( hullsize && hullsize > 0 ) then
+	-- 		-- Trace a hull (cube) from the old eye position to the new
+	-- 		local tr = util.TraceHull( {
+	-- 										start	= view.origin,
+	-- 										endpos	= neworigin,
+	-- 										mins	= Vector( hullsize, hullsize, hullsize ) * -1,
+	-- 										maxs	= Vector( hullsize, hullsize, hullsize ),
+	-- 										filter	= entityfilter
+	-- 									})
+	-- 		-- If we hit something then stop there
+	-- 		-- [ stops the camera going through walls ]						
+	-- 		if ( tr.Hit ) then
+	-- 			neworigin = tr.HitPos
+	-- 		end
+	-- 	end
 
-		-- Set our calculated origin
-		view.origin = neworigin
+	-- 	-- Set our calculated origin
+	-- 	view.origin = neworigin
 
-		-- Set the angles to our view angles (not the entities eye angles)
-		view.angles = eyeang
+	-- 	-- Set the angles to our view angles (not the entities eye angles)
+	-- 	view.angles = eyeang
+		LocalPlayer.DriveAngles = view.angles
 	end,
 
 	SetupControls = function( self, cmd )

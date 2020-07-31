@@ -22,8 +22,10 @@ end
 function meta:GetStars()
 	return self:GetNWInt( "Stars", 0 )
 end
-function meta:GetPlacingScore()
-	return ( self:GetStars() + ( self:GetScore() / 100 ) )
+function meta:GetPlacingScore( stars, score ) -- Can force values for these, for MinigameOutro
+	local stars = stars or self:GetStars()
+	local score = score or self:GetScore()
+	return ( stars + ( score / 100 ) )
 end
 if ( SERVER ) then
 	function meta:AddScore( add, novisual )

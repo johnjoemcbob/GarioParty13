@@ -226,7 +226,7 @@ if ( CLIENT ) then
 		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			order[ply] = ply:GetPlacingScore()
 			if ( last ) then
-				order[ply] = ply.LastProps or 0
+				order[ply] = ply:GetPlacingScore( ply.LastStars, ply.LastProps ) or 0
 			end
 		end
 
