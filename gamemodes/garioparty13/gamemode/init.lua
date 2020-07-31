@@ -16,6 +16,7 @@ AddCSLuaFile( "cl_modelcache.lua" )
 AddCSLuaFile( "cl_scene.lua" )
 AddCSLuaFile( "cl_transition.lua" )
 AddCSLuaFile( "cl_backgrounds.lua" )
+AddCSLuaFile( "cl_scoreboard.lua" )
 
 -- LUA Includes
 include( "shared.lua" )

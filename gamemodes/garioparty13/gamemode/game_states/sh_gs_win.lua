@@ -32,7 +32,7 @@ GM.AddGameState( STATE_WIN, {
 		end
 
 		if ( CLIENT ) then
-			Win.Scene = LoadScene( "city.json" )
+			Win.Scene = LoadScene( "win.json" )
 
 			-- Reset player board models
 			for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
@@ -76,12 +76,11 @@ hook.Add( "PostDrawOpaqueRenderables", HOOK_PREFIX .. STATE_WIN .. "PostDrawOpaq
 
 		-- Render background scene
 		local pos = GP13_WIN_POS + Vector( 2, 3.25, 0 ) * GP13_WIN_SCALE
-		Win.Scene = LoadScene( "win.json" ) -- TODO TEMP TESTING
+		--Win.Scene = LoadScene( "win.json" ) print( "RELOAD EVERY FRAME" ) -- TODO TEMP TESTING
 		render.SetLightingMode( 2 )
 			RenderScene( Win.Scene, pos )
 
 			-- Render player podium places
-			-- TODO sort
 			local placing = 1
 			for k, ply in pairs( self.Winners ) do
 				if ( ply.BoardModel and ply.BoardModel:IsValid() ) then
@@ -121,6 +120,14 @@ hook.Add( "HUDPaint", HOOK_PREFIX .. STATE_WIN .. "_HUDPaint", function()
 	if ( GAMEMODE:GetStateName() == STATE_WIN ) then
 		local self = GAMEMODE.GameStates[STATE_WIN]
 
+		-- Draw title
+		local outlinewidth = 4
+		local outlinecolour = COLOUR_BLACK
+
+		local x = ScrH() / 8 * 5.5
+		local y = ScrH() / 8 * 7
+		local gpos = DrawTitle( "Gario Party 13!", "GarioParty", x, y, colour, outlinewidth, outlinecolour )
+
 		-- Top players
 		local margin = ScrW() / 32
 		local x = margin
@@ -133,20 +140,20 @@ hook.Add( "HUDPaint", HOOK_PREFIX .. STATE_WIN .. "_HUDPaint", function()
 		local outlinecolour	= COLOUR_BLACK
 		--draw.RoundedBox( 4, x - w / 2, y - h / 2, w, h, COLOUR_WHITE )
 		if ( self.Winners[1] and self.Winners[1]:IsValid() ) then
-			draw.SimpleTextOutlined( self.Winners[1]:Nick() .. " Wins!!", "MinigameTitle", x, y, self.Winners[1]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
+			draw.SimpleTextOutlined( self.Winners[1]:Nick() .. " Wins!!", "GarioParty", x, y, self.Winners[1]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
 		end
 		if ( self.Winners[2] and self.Winners[2]:IsValid() ) then
-			draw.SimpleTextOutlined( "2nd: " .. self.Winners[2]:Nick(), "DermaLarge", x, y + between * 1, self.Winners[2]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
+			draw.SimpleTextOutlined( "2nd: " .. self.Winners[2]:Nick(), "SubTitle", x, y + between * 1, self.Winners[2]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
 		end
 		if ( self.Winners[3] and self.Winners[3]:IsValid() ) then
-			draw.SimpleTextOutlined( "3rd: " .. self.Winners[3]:Nick(), "DermaLarge", x, y + between * 1.5, self.Winners[3]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
+			draw.SimpleTextOutlined( "3rd: " .. self.Winners[3]:Nick(), "SubTitle", x, y + between * 1.5, self.Winners[3]:GetColour(), TEXT_ALIGN_LEFT, TEXT_ALIGN_TOP, outlinewidth, outlinecolour )
 		end
 
 		-- Full scores in bottom left
 		local x = ScrW() - margin
 		local y = ScrH() - margin
-		local between = 64
-		local font = "DermaLarge"
+		local between = 40
+		local font = "CloseCaption_Normal"
 			surface.SetFont( font )
 			local tw, th = surface.GetTextSize( "HEY" )
 		for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
@@ -154,21 +161,22 @@ hook.Add( "HUDPaint", HOOK_PREFIX .. STATE_WIN .. "_HUDPaint", function()
 		end
 
 		-- Timer
-		local font = "DermaLarge"
+		--self.StartTime = CurTime()
+		local font = "SubTitle"
 		local width = ScrW() / 8
 		local height = ScrH() / 16
-		local x = ScrW() / 32
-		local y = ScrH() - x
+		local x = ScrW() - ScrW() / 7
+		local y = ScrH() / 10
 		local border = height / 8
 		local elapsed = CurTime() - self.StartTime
 		local left = math.Clamp( TIME_RESETTOLOBBY - elapsed, -1, TIME_RESETTOLOBBY )
 		local percent = left / TIME_RESETTOLOBBY
-		if ( left >= 0 ) then
+		--if ( left >= 0 ) then
 			surface.SetDrawColor( COLOUR_BLACK )
 			surface.DrawRect( x, y - height, width, height )
 			surface.SetDrawColor( colour )
 			surface.DrawRect( x, y - height, width * percent, height )
 			draw.SimpleTextOutlined( math.ceil( left ), font, x + width / 2, y - height / 2, COLOUR_WHITE, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, outlinewidth, outlinecolour )
-		end
+		--end
 	end
 end )

@@ -20,7 +20,6 @@ local PILLARS = {
 local PILLAR_HEIGHT = 120
 local PILLAR_RADIUS = 30
 
-local WIN_SCORE = 5
 FACE_SIZE = 128 + 64
 
 DROP_SCARY_FACE = "DROP_SCARY_FACE"
@@ -385,7 +384,7 @@ GM.AddGame( NAME, "Default", {
 				if ( scare and scare:IsValid() and scare != ply ) then
 					local new = scare:GetNWInt( "Score", 0 ) + 1
 					scare:SetNWInt( "Score", new )
-					if ( new >= WIN_SCORE ) then
+					if ( new >= CONVAR_MINIGAME_TARGET:GetInt() ) then
 						self:Win( scare )
 					end
 				else

@@ -14,6 +14,7 @@ include( "cl_modelcache.lua" )
 include( "cl_scene.lua" )
 include( "cl_transition.lua" )
 include( "cl_backgrounds.lua" )
+include( "cl_scoreboard.lua" )
 
 ------------------------
   -- Gamemode Hooks --

@@ -9,8 +9,6 @@ local SPEEDS = { 1, 1 }
 
 local MODEL
 
-local FLYHIGH_TIMELIMIT	= 40
-
 local NAME = "Fly High"
 GM.AddGame( NAME, "Default", {
 	Author = "johnjoemcbob",
@@ -42,24 +40,6 @@ GM.AddGame( NAME, "Default", {
 	end,
 	Init = function( self )
 		-- Runs on CLIENT and SERVER realms!
-		
-		-- if ( SERVER ) then
-		-- 	timer.Simple( FLYHIGH_TIMELIMIT, function()
-		-- 		if ( GAMEMODE:GetStateName() == STATE_MINIGAME and GAMEMODE.GameStates[STATE_MINIGAME].Minigame == NAME ) then
-		-- 			-- Find max scoring player
-		-- 			local ply = nil
-		-- 				local maxscore = -1
-		-- 				for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
-		-- 					local score = v:GetNWInt( "Score", 0 )
-		-- 					if ( score > maxscore ) then
-		-- 						ply = v
-		-- 						maxscore = score
-		-- 					end
-		-- 				end
-		-- 			self:Win( ply )
-		-- 		end
-		-- 	end )
-		-- end
 
 		self.StartTime = CurTime()
 	end,
@@ -94,7 +74,7 @@ GM.AddGame( NAME, "Default", {
 		end
 	end,
 	Think = function( self )
-		if ( self.StartTime + FLYHIGH_TIMELIMIT <= CurTime() ) then
+		if ( self.StartTime + CONVAR_MINIGAME_TIMER:GetFloat() <= CurTime() ) then
 			-- Find max scoring player
 			local ply = nil
 				local maxscore = -1
@@ -198,8 +178,8 @@ GM.AddGame( NAME, "Default", {
 		local y = height
 		local border = height / 8
 		local elapsed = ( CurTime() - self.StartTime )
-		local time = FLYHIGH_TIMELIMIT - elapsed
-		local percent = time / FLYHIGH_TIMELIMIT
+		local time = CONVAR_MINIGAME_TIMER:GetFloat() - elapsed
+		local percent = time / CONVAR_MINIGAME_TIMER:GetFloat()
 		if ( time >= 0 ) then
 			surface.SetDrawColor( COLOUR_BLACK )
 			surface.DrawRect( x - width / 2, y - height / 2, width, height )

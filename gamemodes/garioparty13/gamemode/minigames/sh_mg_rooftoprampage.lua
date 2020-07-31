@@ -47,7 +47,6 @@ GM.AddGame( NAME, "Goose", {
 		self:AddConstant( "ANGLE_CLAMP"	, "NUMBER"	, 20 )
 		self:AddConstant( "EGG_FUSE"	, "NUMBER"	, 1 )
 		self:AddConstant( "EGG_RANGE"	, "NUMBER"	, 100 )
-		self:AddConstant( "SCORE_MAX"	, "NUMBER"	, 5 )
 	end,
 	Init = function( self )
 		-- Runs on CLIENT and SERVER realms!
@@ -195,7 +194,7 @@ GM.AddGame( NAME, "Goose", {
 		if ( attacker:IsValid() and attacker != victim and attacker:IsPlayer() ) then
 			attacker:SetNWInt( "Score", attacker:GetNWInt( "Score", 0 ) + 1 )
 
-			if ( attacker:GetNWInt( "Score" ) >= self["SCORE_MAX"] ) then
+			if ( attacker:GetNWInt( "Score" ) >= CONVAR_MINIGAME_TARGET:GetInt() ) then
 				self:Win( attacker )
 				--attacker.CurrentModel = self["MODEL_MELON"]
 				--attacker:SetModelScale( 2 ) -- Pssst, commented this out because it makes bad collision between players!

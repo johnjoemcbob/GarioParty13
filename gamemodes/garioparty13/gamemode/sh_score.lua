@@ -7,8 +7,8 @@
 
 local HOOK_PREFIX = HOOK_PREFIX .. "Score_"
 
-SCORE_NAME			= "Props"
-STARS_NAME			= "Stars"
+SCORE_NAME			= "☗"
+STARS_NAME			= "★"
 SCORE_SPACE_ADD		= 3
 SCORE_SPACE_REMOVE	= -3
 SCORE_WIN			= 5
@@ -37,7 +37,13 @@ if ( SERVER ) then
 			self:SetNWInt( "OverallScore", score )
 			if ( !novisual ) then
 				Score:BroadcastChange( self, score ) -- Used to trigger the visual start
-				PrintMessage( HUD_PRINTCENTER, self:Nick() .. "| now: " .. score .. " by: " .. change ) -- TODO TEMP
+				--PrintMessage( HUD_PRINTCENTER, self:Nick() .. "| now: " .. score .. " by: " .. change ) -- TODO TEMP
+				if ( change != 0 ) then
+					if ( change > 0 ) then
+						change = "+" .. change
+					end
+					PrintMessage( HUD_PRINTCENTER, change )
+				end
 			end
 		return change
 	end

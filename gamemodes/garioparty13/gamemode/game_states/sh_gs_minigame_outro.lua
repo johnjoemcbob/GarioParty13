@@ -26,7 +26,7 @@ GM.AddGameState( STATE_MINIGAME_OUTRO, {
 		-- Leave timer
 		if ( SERVER ) then
 			timer.Simple( DURATION, function()
-				if ( GAMEMODE.GameStates[STATE_BOARD].Round >= MAX_ROUNDS ) then
+				if ( GAMEMODE.GameStates[STATE_BOARD].Round >= CONVAR_MAXROUNDS:GetInt() ) then
 					GAMEMODE:SwitchState( STATE_WIN )
 				else
 					GAMEMODE:SwitchState( STATE_BOARD )

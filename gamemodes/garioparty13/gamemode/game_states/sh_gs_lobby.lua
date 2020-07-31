@@ -13,6 +13,7 @@ local me = {
 	"http://johnjoemcbob.com/banner/garioparty_me.png",
 	"https://i.imgur.com/ZTdMWwb.png", -- Backup
 }
+local me_url = "http://johnjoemcbob.com"
 local sponsors = {
 	"https://media.gmodstore.com/_/competition_banners/2020/gmodstore.png",
 	"https://media.gmodstore.com/_/competition_banners/2020/zerochain.png",
@@ -32,6 +33,7 @@ local sponsors = {
 	"https://media.gmodstore.com/_/competition_banners/2020/tehbasshunter.png",
 	"https://media.gmodstore.com/_/competition_banners/2020/molly-network.png",
 }
+local sponsor_url = "https://www.gmodstore.com/community/threads/7507"
 
 if ( CLIENT ) then
 	MAT_LOGO = Material( "gui/gmod_logo" )
@@ -55,12 +57,23 @@ GM.AddGameState( STATE_LOBBY, {
 	end,
 	OnThink = function( self )
 		if ( #player.GetAll() > 1 ) then
-			GAMEMODE:SwitchState( STATE_BOARD )
+			local press = false
+				for k, v in pairs( player.GetAll() ) do
+					if ( v:KeyDown( IN_JUMP ) ) then
+						press = true
+					end
+				end
+			if ( press ) then
+				GAMEMODE:SwitchState( STATE_BOARD )
+			end
 		end
 		
 		if ( CLIENT ) then
 			if ( Transition.Active ) then
 				self:CreateUIOverlay()
+			elseif ( !vgui.CursorVisible() ) then
+				gui.EnableScreenClicker( true )
+				RestoreCursorPosition()
 			end
 		end
 	end,
@@ -119,7 +132,11 @@ GM.AddGameState( STATE_LOBBY, {
 			-- Waiting for players
 			local x = ScrW() / 2
 			local y = y + ScrH() / 4
-			draw.SimpleTextOutlined( "Waiting for players...", "SubTitle", x, y, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, outlinewidth, outlinecolour )
+			local text = "Waiting for players..."
+				if ( #player.GetAll() > 1 ) then
+					text = #player.GetAll() .. "/8 players connected, jump to start!"
+				end
+			draw.SimpleTextOutlined( text, "SubTitle", x, y, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, outlinewidth, outlinecolour )
 
 			-- Made By
 			local x = ScrW() / 2
@@ -137,6 +154,9 @@ GM.AddGameState( STATE_LOBBY, {
 			local x = ScrW() - ScrW() / 64
 			local y = ScrH() - off
 			draw.SimpleTextOutlined( "Sponsored By", "SubTitle", x, y, colour, TEXT_ALIGN_RIGHT, TEXT_ALIGN_BOTTOM, outlinewidth, outlinecolour )
+
+			-- Scoreboard
+			Scoreboard:TryRender( true )
 		end
 		-- self.Panel:MakePopup()
 		-- self.Panel:MoveToBack()
@@ -148,7 +168,6 @@ GM.AddGameState( STATE_LOBBY, {
 		-- Me credits (backup)
 		local html = vgui.Create( "DHTML", self.Panel )
 		html:SetSize( width, height )
-		--html:Dock( LEFT )
 		html:SetPos( 0, ScrH() - off )
 		html:SetHTML( [[
 			<img style="text-align: center" src="]] .. me[2] .. [[" width="100%" style="position: absolute;bottom: 0px;">
@@ -157,28 +176,23 @@ GM.AddGameState( STATE_LOBBY, {
 		-- Me credits
 		local html = vgui.Create( "DHTML", self.Panel )
 		html:SetSize( width, height )
-		--html:Dock( LEFT )
 		html:SetPos( 0, ScrH() - off )
 		html:SetHTML( [[
 			<img style="text-align: center" src="]] .. me[1] .. [[" width="100%" style="position: absolute;bottom: 0px;">
 		]] )
 		html.NextChange = 0
 		html.Sponsor = 0
-		-- function html:Think()
-		-- 	if ( self.NextChange <= CurTime() ) then
-		-- 		self.Sponsor = self.Sponsor + 1
-		-- 			if ( self.Sponsor > #me ) then self.Sponsor = 1 end
-		-- 		self:SetHTML( [[
-		-- 			<img style="text-align: center" src="]] .. me[self.Sponsor] .. [[" width="100%">
-		-- 		]] )
-		-- 		self.NextChange = CurTime() + BETWEEN_SPONSOR_CHANGES
-		-- 	end
-		-- end
+		local button = vgui.Create( "DButton", self.Panel )
+		button:SetSize( width, height )
+		button:SetPos( 0, ScrH() - off )
+		function button:Paint( w, h ) end
+		function button:DoClick()
+			gui.OpenURL( me_url )
+		end
 
 		-- Background loader (?)
 		local html = vgui.Create( "DHTML", self.Panel )
 		html:SetSize( width, height )
-		--html:Dock( RIGHT )
 		html:SetPos( ScrW(), ScrH() )
 		html.NextChange = 0
 		html.Sponsor = 0
@@ -205,7 +219,6 @@ GM.AddGameState( STATE_LOBBY, {
 		randomise()
 		local html = vgui.Create( "DHTML", self.Panel )
 		html:SetSize( width, height )
-		--html:Dock( RIGHT )
 		html:SetPos( ScrW() / 2, ScrH() - off )
 		html.NextChange = 0
 		html.Sponsor = 0
@@ -218,6 +231,13 @@ GM.AddGameState( STATE_LOBBY, {
 				]] )
 				self.NextChange = CurTime() + BETWEEN_SPONSOR_CHANGES
 			end
+		end
+		local button = vgui.Create( "DButton", self.Panel )
+		button:SetSize( width, height )
+		button:SetPos( ScrW() / 2, ScrH() - off )
+		function button:Paint( w, h ) end
+		function button:DoClick()
+			gui.OpenURL( sponsor_url )
 		end
 
 		self:CreateUIOverlay()

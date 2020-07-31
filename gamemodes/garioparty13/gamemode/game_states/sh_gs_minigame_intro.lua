@@ -48,8 +48,19 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 			end
 			local ind = math.random( 1, #game_pool )
 			self.Minigame = game_pool[ind]
+				local forced = false
+				local next = CONVAR_MINIGAME_FORCE_NEXT:GetString()
+				local all = CONVAR_MINIGAME_FORCE_ALL:GetString()
+				if ( next != " " ) then
+					self.Minigame = next
+					CONVAR_MINIGAME_FORCE_NEXT:SetString( " " )
+				elseif ( all != " " ) then
+					self.Minigame = all
+				end
 			MinigameIntro:BroadcastMinigame( self.Minigame )
-			table.remove( game_pool, ind )
+			if ( !forced ) then
+				table.remove( game_pool, ind )
+			end
 		end
 
 		-- Init columns of readiness
@@ -143,8 +154,6 @@ if ( SERVER ) then
 			net.WriteString( minigame )
 			net.WriteBool( ui )
 		net.Send( ply )
-
-		print( "Late joiner; ", ply, "sending minigame; ", minigame )
 	end
 
 	net.Receive( NETSTRING_WAITING_CUSTOM, function( lngth, ply )

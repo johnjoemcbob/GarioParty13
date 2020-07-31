@@ -18,6 +18,13 @@ else
 	DeriveGamemode( "base" )
 end
 
+-- Convars
+CONVAR_MAXROUNDS			= CreateConVar( "gp13_maxrounds", 15, FCVAR_NONE, "The max number of rounds per game before a winner is announced", 1 )
+CONVAR_MINIGAME_TIMER		= CreateConVar( "gp13_minigametimers", 60, FCVAR_NONE, "Minigame length", 1 )
+CONVAR_MINIGAME_TARGET		= CreateConVar( "gp13_minigametargets", 5, FCVAR_NONE, "Minigame target scores", 1 )
+CONVAR_MINIGAME_FORCE_NEXT	= CreateConVar( "gp13_minigame_forcenext", " ", FCVAR_NONE, "Force one minigame" )
+CONVAR_MINIGAME_FORCE_ALL	= CreateConVar( "gp13_minigame_force", " ", FCVAR_NONE, "Force all minigames" )
+
 -- Globals
 GM.Epsilon				= 0.001
 GM.GamemodePath			= "gamemodes/GarioParty13/"

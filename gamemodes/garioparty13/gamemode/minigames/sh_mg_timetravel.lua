@@ -287,7 +287,7 @@ GM.AddGame( NAME, "Default", {
 		if ( attacker:IsValid() and attacker:IsPlayer() and attacker != victim ) then
 			attacker:SetNWInt( "Score", attacker:GetNWInt( "Score", 0 ) + 1 )
 
-			if ( attacker:GetNWInt( "Score", 0 ) >= 5 ) then
+			if ( attacker:GetNWInt( "Score", 0 ) >= CONVAR_MINIGAME_TARGET:GetInt() ) then
 				self:Win( attacker )
 			end
 

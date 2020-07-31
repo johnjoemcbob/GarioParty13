@@ -9,7 +9,6 @@ STATE_BOARD = "Board"
 
 GP13_BOARD_CAMERA_ANGLE		= 40
 GP13_BOARD_CAMERA_DISTANCE	= 75
-MAX_ROUNDS					= 15
 
 Board = Board or {}
 
@@ -27,7 +26,7 @@ GM.AddGameState( STATE_BOARD, {
 		self.Round = ( self.Round or 0 )
 		if ( SERVER ) then
 			self.Round = self.Round + 1
-			if ( self.Round == MAX_ROUNDS ) then
+			if ( self.Round == CONVAR_MAXROUNDS:GetInt() ) then
 				PrintMessage( HUD_PRINTCENTER, "Last Round!" )
 			end
 		end
@@ -117,9 +116,22 @@ hook.Add( "HUDPaint", HOOK_PREFIX .. STATE_BOARD .. "_HUDPaint", function()
 	if ( GAMEMODE:GetStateName() == STATE_BOARD ) then
 		local x = ScrW() / 2
 		local y = ScrH() / 32
-		local w = ScrW() / 8
+		local w = ScrW() / 7
 		local h = ScrH() / 16
 		draw.RoundedBox( 4, x - w / 2, y - h / 2, w, h, COLOUR_WHITE )
-		draw.SimpleText( "Round " .. GAMEMODE.GameStates[STATE_BOARD].Round, "CloseCaption_BoldItalic", x, y, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+		draw.SimpleText( "Round " .. GAMEMODE.GameStates[STATE_BOARD].Round, "SubTitle", x, y, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+
+		-- Tab helper text
+		if ( !LocalPlayer():KeyDown( IN_SCORE ) ) then
+			local text = "Press tab to show info"
+			local font = "CloseCaption_BoldItalic"
+			local x = ScrW()
+			local y = ScrH()
+			surface.SetFont( font )
+			local w = surface.GetTextSize( text ) + 16
+			local h = ScrH() / 16
+			draw.RoundedBox( 4, x - w, y - h, w, h, COLOUR_WHITE )
+			draw.SimpleText( text, font, x - w / 2, y - h / 2, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
+		end
 	end
 end )

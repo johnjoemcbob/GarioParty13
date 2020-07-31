@@ -8,8 +8,6 @@
 local PROPS = {}
 local PROPS_NUMBER_TO_SPAWN = 5
 
-local DONUT_TIMELIMIT		= 30
-
 local AREA = {
 	Vector( 1800, -2100, 1160 ),
 	Vector( 800, -1100, 1160 ),
@@ -32,22 +30,6 @@ GM.AddGame( NAME, "Default", {
 		if ( SERVER ) then
 			self:RemoveWorld()
 			self:AddWorld()
-
-			-- timer.Simple( DONUT_TIMELIMIT, function()
-			-- 	if ( GAMEMODE:GetStateName() == STATE_MINIGAME and GAMEMODE.GameStates[STATE_MINIGAME].Minigame == NAME ) then
-			-- 		-- Find max scoring player
-			-- 		local ply = nil
-			-- 			local maxscore = -1
-			-- 			for k, v in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
-			-- 				local score = v:GetNWInt( "Score", 0 )
-			-- 				if ( score > maxscore ) then
-			-- 					ply = v
-			-- 					maxscore = score
-			-- 				end
-			-- 			end
-			-- 		self:Win( ply )
-			-- 	end
-			-- end )
 		end
 
 		self.StartTime = CurTime()
@@ -104,7 +86,7 @@ GM.AddGame( NAME, "Default", {
 		-- Runs on CLIENT and SERVER realms!
 		-- Each update tick for this game, no reference to any player
 
-		if ( self.StartTime + DONUT_TIMELIMIT <= CurTime() ) then
+		if ( self.StartTime + CONVAR_MINIGAME_TIMER:GetFloat() <= CurTime() ) then
 			if ( GAMEMODE:GetStateName() == STATE_MINIGAME and GAMEMODE.GameStates[STATE_MINIGAME].Minigame == NAME ) then
 				-- Find max scoring player
 				local ply = nil
@@ -138,8 +120,8 @@ GM.AddGame( NAME, "Default", {
 		local y = height
 		local border = height / 8
 		local elapsed = ( CurTime() - self.StartTime )
-		local time = DONUT_TIMELIMIT - elapsed
-		local percent = time / DONUT_TIMELIMIT
+		local time = CONVAR_MINIGAME_TIMER:GetFloat() - elapsed
+		local percent = time / CONVAR_MINIGAME_TIMER:GetFloat()
 		if ( time >= 0 ) then
 			surface.SetDrawColor( COLOUR_BLACK )
 			surface.DrawRect( x - width / 2, y - height / 2, width, height )

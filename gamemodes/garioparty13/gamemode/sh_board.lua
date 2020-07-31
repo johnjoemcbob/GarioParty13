@@ -811,31 +811,50 @@ Board.SpecialSpaces[SPACE_TYPE_INVEST] = {
 		)
 
 		-- Show server label 3d2d UI
-		render.SetLightingMode( 0 )
-			local pos = pos + Vector( 0, 0, 3500 * scale.x )
-			local scale = scale.x * 7
-			local ang = Angle( 0, -90, 90 )
-				pos = pos + ang:Forward() * 0 * scale
-			cam.Start3D2D( pos, ang, scale )
-				draw.NoTexture()
-				local lines = {
-					"Server",
-					"Rank: " .. rank,
-					"Owner: " .. owner,
-				}
-				local y = 0
-				for k, line in pairs( lines ) do
-					draw.SimpleTextOutlined(
-						line, "MinigameTitle",
-						0, y,
-						COLOUR_WHITE,
-						TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
-						1, COLOUR_BLACK
-					)
-					y = y + 64
-				end
-			cam.End3D2D()
-		render.SetLightingMode( 2 )
+		if ( LocalPlayer():KeyDown( IN_SCORE ) ) then
+			render.SetLightingMode( 0 )
+				local pos = pos + Vector( 0, 0, 3500 * scale.x )
+				local scale = scale.x * 7
+				local ang = Angle( 0, -90, 90 )
+					pos = pos + ang:Forward() * 0 * scale
+				cam.Start3D2D( pos, ang, scale )
+					draw.NoTexture()
+					surface.SetDrawColor( Color( 0, 0, 0, 230 ) )
+
+					-- Measure width
+					local lines = {
+						"Server",
+						"Rank: " .. rank,
+						"Owner: " .. owner,
+					}
+					local maxchars = 1
+						for k, line in pairs( lines ) do
+							local chars = string.len( line )
+							if ( chars > maxchars ) then
+								maxchars = chars
+							end
+						end
+					local width = 32 * maxchars
+					local height = 64 * #lines
+
+					-- Background
+					surface.DrawRect( -width / 2, -32, width, height )
+
+					-- Text
+					local y = 0
+					for k, line in pairs( lines ) do
+						draw.SimpleTextOutlined(
+							line, "MinigameTitle",
+							0, y,
+							COLOUR_WHITE,
+							TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER,
+							1, COLOUR_BLACK
+						)
+						y = y + 64
+					end
+				cam.End3D2D()
+			render.SetLightingMode( 2 )
+		end
 
 		self.Index = ( self.Index or 1 ) + 1
 	end,
