@@ -78,7 +78,7 @@ GM.AddGameState( STATE_MINIGAME_SELECT, {
 			-- Title
 			local margin = ScrW() / 32
 			local x = ScrW() / 2
-			local y = ScrH() / 6
+			local y = ScrH() / 8
 			local w = ScrW() / 8
 			local h = ScrH() / 16
 			local between = 96
@@ -89,7 +89,7 @@ GM.AddGameState( STATE_MINIGAME_SELECT, {
 
 			-- Instructions
 			local x = ScrW() / 2
-			local y = ScrH() / 3
+			local y = ScrH() / 4
 			draw.SimpleTextOutlined( "Use the scoreboard to return to this menu!", "DermaLarge", x, y, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 2, outlinecolour )
 
 			-- Scoreboard
@@ -97,33 +97,89 @@ GM.AddGameState( STATE_MINIGAME_SELECT, {
 		end
 
 		-- List
-		local w, h = ScrW() / 2, ScrH() / 2
+		local w, h = ScrW() / 1.2, ScrH() / 1.6
 		local list = vgui.Create( "DScrollPanel", self.Panel )
 		list:SetSize( w, h )
-		list:SetPos( ScrW() / 2 - w / 2, ScrH() - h )
+		list:SetPos( ScrW() / 2 - w / 2, ScrH() - h * 1.15 )
 
 		-- Populate with all minigames and a short description
-		for name, mini in pairs( GAMEMODE.Games ) do
-			if ( mini.Playable ) then
-				local button = list:Add( "DButton" )
-				button:SetText( name )
-				button:SetTooltip( mini.Description )
-				button:Dock( TOP )
-				button:DockMargin( 0, 0, 0, 5 )
-				function button:DoClick()
-					GAMEMODE.RequestMinigameChangeAll( name )
+		local columns = 5
+		local rows = {}
+			for i = 1, ( tablelength( GAMEMODE.Games ) % columns ) + 1 do
+				rows[i] = list:Add( "DPanel" )
+				rows[i]:SetSize( w, w / columns )
+				rows[i]:Dock( TOP )
+				rows[i]:DockMargin( 0, 0, 0, 5 )
+				rows[i].Paint = nil
+			end
+		local row = 1
+		local col = 1
+		local added = {}
+		local function loopround( first )
+			for name, mini in pairs( GAMEMODE.Games ) do
+				if ( mini.Playable and ( !mini.UnderConstruction or !first ) and !added[name] ) then
+					local listing = vgui.Create( "DPanel", rows[row] )
+					listing:SetSize( w / columns, w / columns )
+					listing:Dock( LEFT )
+					listing.Index = col * columns + row
+					function listing:Paint( w, h )
+						surface.SetDrawColor( GetLoopedColour( self.Index ) or COLOUR_WHITE )
+						self:DrawFilledRect()
+					end
+
+					local html = vgui.Create( "DHTML", listing )
+					html:Dock( FILL )
+					local delay = 0.1
+					timer.Simple( delay * listing.Index, function()
+						html:SetHTML( [[
+							<img style="text-align: center" src="]] .. mini.GIF .. [[" width="95%">
+						]] )
+					end )
+
+					-- Full [invisible] clickable area button
+					local button = vgui.Create( "DButton", listing )
+					button:SetText( "" )
+					button:Dock( FILL )
+					function button:Paint( w, h )
+						-- Draw minigame name here
+						local font = "DermaLarge"
+						local colour = COLOUR_BLACK
+						draw.SimpleText( name, font, w / 2, h * 0.9, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
+					
+						if ( mini.UnderConstruction ) then
+							surface.SetDrawColor( Color( 255, 255, 255, 100 ) )
+							self:DrawFilledRect()
+
+							-- Under construction
+							draw.SimpleText( "Under", font, w / 2, h / 2 - 12, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
+							draw.SimpleText( "Construction!", font, w / 2, h / 2 + 12, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM )
+						end
+					end
+					function button:DoClick()
+						GAMEMODE.RequestMinigameChangeAll( name )
+					end
+					button:SetEnabled( !mini.UnderConstruction )
+
+					-- Go to next column or wrap around to next row
+					col = col + 1
+					if ( col > columns ) then
+						row = row + 1
+						col = 1
+					end
+
+					added[name] = true
 				end
 			end
 		end
+		loopround( true )
+		loopround( false )
+
 		-- Add back button
-		local button = list:Add( "DButton" )
+		local w = ScrW() / 8
+		local button = vgui.Create( "DButton", self.Panel )
 		button:SetText( "Back" )
-		button:Dock( TOP )
-		button:DockMargin( 0, 0, 0, 5 )
-		function button:Paint( w, h )
-			surface.SetDrawColor( COLOUR_POSITIVE )
-			self:DrawFilledRect()
-		end
+		button:SetSize( w, ScrH() / 16 )
+		button:SetPos( ScrW() / 2 - w / 2, ScrH() / 12 * 11 )
 		function button:DoClick()
 			GAMEMODE.RequestGameState( STATE_MODESELECT )
 		end

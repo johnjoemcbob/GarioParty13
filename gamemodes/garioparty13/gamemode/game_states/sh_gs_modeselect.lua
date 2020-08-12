@@ -7,6 +7,11 @@
 
 STATE_MODESELECT = "Mode Select"
 
+if ( CLIENT ) then
+	Material_Mode_Campaign = Material( "mode_campaign.png" )
+	Material_Mode_Freeplay = Material( "mode_freeplay.png" )
+end
+
 GM.AddGameState( STATE_MODESELECT, {
 	OnStart = function( self )
 		GAMEMODE.Campaign = false
@@ -98,15 +103,63 @@ GM.AddGameState( STATE_MODESELECT, {
 			Scoreboard:TryRender( true )
 		end
 
-		local width = ScrW() / 4
+		local function paint( self, w, h, dir )
+			local x = 0
+			local y = 0
+			local rot = 0
+
+			if ( !self:IsHovered() or !self:IsEnabled() ) then
+				local scale = 0.8
+				local off = 1 - scale
+
+				x = x + w * off / 2
+				y = y + h * off / 2
+				w = w * scale
+				h = h * scale
+
+				rot = 10 * dir
+			end
+
+			-- Draw background
+			surface.SetDrawColor( COLOUR_BLACK )
+			draw.NoTexture()
+			surface.DrawTexturedRectRotated( x + w / 2, y + h / 2, w, h, 0 )
+
+			-- Draw image
+			surface.SetDrawColor( COLOUR_WHITE )
+				if ( !self:IsEnabled() ) then
+					surface.SetDrawColor( Color( 150, 150, 150, 255 ) )
+				end
+			surface.SetMaterial( self.Background )
+			surface.DrawTexturedRectRotated( x + w / 2, y + h / 2, w, h, rot )
+
+			-- Draw text
+			local font = "DermaLarge"
+			local colour = COLOUR_WHITE
+			local col_out = COLOUR_BLACK
+			local lines = string.Split( self.Text, "\n" )
+			local height = 32
+			for k, line in pairs( lines ) do
+				draw.SimpleTextOutlined( line, font, x + w / 2, y + h / 2 - math.ceil( #lines / 2 ) * height + k * height, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 2, col_out )
+			end
+		end
+
+		local width = ScrW() / 3
 		local height = width / 2
+		local y = ScrH() / 3
+
 		local basetext = "Multiplayer Campaign"
 		local invalidtext = basetext .. "\n[Not enough players!]"
 		-- Button: Campaign
 		local button = vgui.Create( "DButton", self.Panel )
-		button:SetText( basetext )
-		button:SetSize( width, height )
-		button:SetPos( ScrW() / 4 - width / 2, ScrH() / 2 )
+		button:SetText( "" )
+		button.Text = basetext
+		button.Background = Material_Mode_Campaign
+		button:SetSize( width, width )
+		button:SetPos( ScrW() / 4 - width / 2, y )
+		function button:Paint( w, h )
+			paint( self, w, h, -1 )
+		end
 		function button:DoClick()
 			if ( #player.GetAll() > 1 ) then
 				GAMEMODE.RequestGameState( STATE_BOARD )
@@ -117,17 +170,22 @@ GM.AddGameState( STATE_MODESELECT, {
 		function button:Think()
 			local valid = ( #player.GetAll() > 1 )
 			self:SetEnabled( valid )
-			self:SetText( basetext )
+			self.Text = basetext
 			if ( !valid ) then
-				self:SetText( invalidtext )
+				self.Text = invalidtext
 			end
 		end
 
 		-- Button: Play Minigames
 		local button = vgui.Create( "DButton", self.Panel )
-		button:SetText( "Freeplay Minigames" )
-		button:SetSize( width, height )
-		button:SetPos( ScrW() / 4 * 3 - width / 2, ScrH() / 2 )
+		button:SetText( "" )
+		button.Text = "Freeplay Minigames"
+		button.Background = Material_Mode_Freeplay
+		button:SetSize( width, width )
+		button:SetPos( ScrW() / 4 * 3 - width / 2, y )
+		function button:Paint( w, h )
+			paint( self, w, h, 1 )
+		end
 		function button:DoClick()
 			GAMEMODE.RequestGameState( STATE_MINIGAME_SELECT )
 		end

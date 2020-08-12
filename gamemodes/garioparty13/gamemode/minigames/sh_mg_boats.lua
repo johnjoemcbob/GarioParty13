@@ -6,7 +6,8 @@
 --
 
 GM.AddGame( "Boats", "", {
-	Playable = false,
+	Playable = true,
+	UnderConstruction = true,
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
 	TagLine = "Yarr!",

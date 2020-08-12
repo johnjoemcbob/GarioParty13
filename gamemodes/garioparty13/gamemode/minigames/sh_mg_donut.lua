@@ -15,7 +15,8 @@ local AREA = {
 
 local NAME = "Donut County"
 GM.AddGame( NAME, "Default", {
-	Playable = false,
+	Playable = true,
+	UnderConstruction = true,
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
 	TagLine = "Shluuuuurp",

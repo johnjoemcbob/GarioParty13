@@ -37,7 +37,7 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 				if ( #game_pool == 0 ) then
 					game_pool = {}
 					for name, game in pairs( GAMEMODE.Games ) do
-						if ( game.Playable ) then
+						if ( game.Playable and !game.UnderConstruction ) then
 							table.insert( game_pool, name )
 						end
 					end
