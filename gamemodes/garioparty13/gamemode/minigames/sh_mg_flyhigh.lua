@@ -11,6 +11,7 @@ local MODEL
 
 local NAME = "Fly High"
 GM.AddGame( NAME, "Default", {
+	Playable = true,
 	Author = "johnjoemcbob",
 	TagLine = "High Fly",
 	Instructions = "Highest jump wins!\nEach high jump increases your max speed",

@@ -8,6 +8,7 @@
 local NAME = "Rooftop Rampage"
 
 GM.AddGame( NAME, "Goose", {
+	Playable = true,
 	Author = "jctwizard",
 	Colour = Color( 255, 0, 0, 255 ),
 	TagLine = "Bombs Away!",

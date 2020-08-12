@@ -19,7 +19,12 @@ AddPlayerState( PLAYER_STATE_JOINED, {
 		end
 	end,
 	OnThink = function( self, ply )
-		
+		if ( SERVER ) then
+			if ( !self.Campaign && GAMEMODE:GetStateName() == STATE_MINIGAME ) then
+				ply:SetGame( GAMEMODE.GetState().Minigame )
+				ply:SwitchState( PLAYER_STATE_PLAY )
+			end
+		end
 	end,
 	OnFinish = function( self, ply )
 		if ( SERVER ) then

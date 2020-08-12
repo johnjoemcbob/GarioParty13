@@ -11,6 +11,7 @@ end
 Sound_Quack = Sound( "quack.wav" )
 
 GM.AddGame( "Goose", "Default", {
+	Playable = false,
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
 	Instructions = "Left mouse to HONK\nMaybe its about stealing supplies from combine?\nMaybe its Goose-den Freeman beating up zombies!\nMake something!\nQUACK",

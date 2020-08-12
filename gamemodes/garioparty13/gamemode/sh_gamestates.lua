@@ -16,6 +16,8 @@ function includeanddownload()
 	local dir = "game_states/"
 	local files = {
 		"sh_gs_lobby",
+		"sh_gs_modeselect",
+		"sh_gs_minigame_select",
 		"sh_gs_board",
 		"sh_gs_minigame",
 		"sh_gs_minigame_intro",
@@ -38,8 +40,10 @@ end
 
 -- Net
 local NETSTRING = HOOK_PREFIX .. "Net_GameState"
+local NETSTRING_REQUEST = HOOK_PREFIX .. "Net_GameState_Request"
 if ( SERVER ) then
 	util.AddNetworkString( NETSTRING )
+	util.AddNetworkString( NETSTRING_REQUEST )
 
 	function GM.BroadcastGameState( oldstate, newstate )
 		-- Communicate to all clients
@@ -56,6 +60,16 @@ if ( SERVER ) then
 			net.WriteString( newstate )
 		net.Send( ply )
 	end
+
+	net.Receive( NETSTRING_REQUEST, function( lngth, ply )
+		local state = net.ReadString()
+
+		-- Ask current state if this player can change
+		local cur = GAMEMODE:GetState()
+		if ( cur.OnRequestStateChange ) then
+			cur:OnRequestStateChange( ply, state )
+		end
+	end )
 end
 if ( CLIENT ) then
 	net.Receive( NETSTRING, function( lngth )
@@ -80,6 +94,13 @@ if ( CLIENT ) then
 
 		Scoreboard:Hide()
 	end )
+
+	function GM.RequestGameState( state )
+		-- Communicate to all clients
+		net.Start( NETSTRING_REQUEST )
+			net.WriteString( state )
+		net.SendToServer()
+	end
 end
 
 -- Set/Get/Switch

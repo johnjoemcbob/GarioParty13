@@ -27,4 +27,9 @@ GM.AddGameState( STATE_MINIGAME, {
 		end
 		GAMEMODE.Games[self.Minigame]:Destroy()
 	end,
+	OnRequestStateChange = function( self, ply, state )
+		if ( !GAMEMODE.Campaign && state == STATE_MINIGAME_SELECT ) then
+			GAMEMODE:SwitchState( state )
+		end
+	end,
 })

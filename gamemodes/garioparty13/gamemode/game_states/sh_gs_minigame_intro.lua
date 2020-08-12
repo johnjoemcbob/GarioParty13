@@ -33,34 +33,31 @@ GM.AddGameState( STATE_MINIGAME_INTRO, {
 	OnStart = function( self )
 		-- Find a random minigame
 		if ( SERVER ) then
-			--local games = table.GetKeys( GAMEMODE.Games ) -- TODO TEMP USE THIS WHEN ALL IMPLEMENTED
-			if ( #game_pool == 0 ) then
-				game_pool = {
-					"Scary Game",
-					"Teeth",
-					"Screencheat",
-					"Rooftop Rampage",
-					"Time Travel",
-					--"Donut County",
-					"Fly High",
-					--"Boats",
-				}
-			end
-			local ind = math.random( 1, #game_pool )
-			self.Minigame = game_pool[ind]
-				local forced = false
-				local next = CONVAR_MINIGAME_FORCE_NEXT:GetString()
-				local all = CONVAR_MINIGAME_FORCE_ALL:GetString()
-				if ( next != " " ) then
-					self.Minigame = next
-					CONVAR_MINIGAME_FORCE_NEXT:SetString( " " )
-				elseif ( all != " " ) then
-					self.Minigame = all
+			if ( GAMEMODE.Campaign ) then
+				if ( #game_pool == 0 ) then
+					game_pool = {}
+					for name, game in pairs( GAMEMODE.Games ) do
+						if ( game.Playable ) then
+							table.insert( game_pool, name )
+						end
+					end
 				end
-			MinigameIntro:BroadcastMinigame( self.Minigame )
-			if ( !forced ) then
-				table.remove( game_pool, ind )
+				local ind = math.random( 1, #game_pool )
+				self.Minigame = game_pool[ind]
+					local forced = false
+					local next = CONVAR_MINIGAME_FORCE_NEXT:GetString()
+					local all = CONVAR_MINIGAME_FORCE_ALL:GetString()
+					if ( next != " " ) then
+						self.Minigame = next
+						CONVAR_MINIGAME_FORCE_NEXT:SetString( " " )
+					elseif ( all != " " ) then
+						self.Minigame = all
+					end
+				if ( !forced ) then
+					table.remove( game_pool, ind )
+				end
 			end
+			MinigameIntro:BroadcastMinigame( self.Minigame )
 		end
 
 		-- Init columns of readiness
@@ -479,6 +476,7 @@ if ( CLIENT ) then
 				--icon:SetSize( 200, 200 )
 				--icon:SetPos( rightx - twidth / 2, y + 64 )
 				icon:SetModel( model )
+				icon:SetTooltip( ply:Nick() )
 				icon.Size = 64
 				function icon:LayoutEntity( Entity ) return end	-- Disable cam rotation
 				local headpos = icon.Entity:GetBonePosition(icon.Entity:LookupBone("ValveBiped.Bip01_Head1"))

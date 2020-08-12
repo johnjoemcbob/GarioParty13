@@ -14,6 +14,8 @@ Board = Board or {}
 
 GM.AddGameState( STATE_BOARD, {
 	OnStart = function( self )
+		GAMEMODE.Campaign = true
+
 		-- Late joiners
 		for k, v in pairs( player.GetAll() ) do
 			v:SwitchState( PLAYER_STATE_PLAY )
@@ -133,5 +135,19 @@ hook.Add( "HUDPaint", HOOK_PREFIX .. STATE_BOARD .. "_HUDPaint", function()
 			draw.RoundedBox( 4, x - w, y - h, w, h, COLOUR_WHITE )
 			draw.SimpleText( text, font, x - w / 2, y - h / 2, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 		end
+
+		-- Current player's turn info
+		local text = "It's " .. Turn.Current:Nick() .. "'s turn!"
+			if ( Turn.Current == LocalPlayer() ) then
+				text = "It's your turn!"
+			end
+		local font = "CloseCaption_BoldItalic"
+		local x = ScrW() / 2
+		local y = ScrH()
+		surface.SetFont( font )
+		local w = surface.GetTextSize( text ) + 16
+		local h = ScrH() / 16
+		draw.RoundedBox( 4, x - w, y - h, w, h, COLOUR_WHITE )
+		draw.SimpleText( text, font, x - w / 2, y - h / 2, COLOUR_BLACK, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER )
 	end
 end )

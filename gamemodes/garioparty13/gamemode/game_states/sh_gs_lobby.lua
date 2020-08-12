@@ -41,9 +41,6 @@ end
 
 GM.AddGameState( STATE_LOBBY, {
 	OnStart = function( self )
-		-- TODO TEMP
-		--timer.Simple( 10, function() GAMEMODE:SwitchState( STATE_BOARD ) end )
-
 		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			ply:HideFPSController()
 		end
@@ -56,7 +53,7 @@ GM.AddGameState( STATE_LOBBY, {
 		end
 	end,
 	OnThink = function( self )
-		if ( #player.GetAll() > 1 ) then
+		--if ( #player.GetAll() > 1 ) then
 			local press = false
 				for k, v in pairs( player.GetAll() ) do
 					if ( v:KeyDown( IN_JUMP ) ) then
@@ -64,9 +61,9 @@ GM.AddGameState( STATE_LOBBY, {
 					end
 				end
 			if ( press ) then
-				GAMEMODE:SwitchState( STATE_BOARD )
+				GAMEMODE:SwitchState( STATE_MODESELECT )
 			end
-		end
+		--end
 		
 		if ( CLIENT ) then
 			if ( Transition.Active ) then
@@ -90,10 +87,6 @@ GM.AddGameState( STATE_LOBBY, {
 
 		for k, ply in pairs( PlayerStates:GetPlayers( PLAYER_STATE_PLAY ) ) do
 			ply:ShowFPSController()
-		end
-
-		for k, v in pairs( player.GetAll() ) do
-			v:SwitchState( PLAYER_STATE_PLAY )
 		end
 	end,
 
@@ -133,17 +126,17 @@ GM.AddGameState( STATE_LOBBY, {
 			local x = ScrW() / 2
 			local y = y + ScrH() / 4
 			local text = "Waiting for players..."
-				if ( #player.GetAll() > 1 ) then
+				--if ( #player.GetAll() > 1 ) then
 					text = #player.GetAll() .. "/8 players connected, jump to start!"
-				end
+				--end
 			draw.SimpleTextOutlined( text, "SubTitle", x, y, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_CENTER, outlinewidth, outlinecolour )
 
-			-- Made By
+			-- 
 			local x = ScrW() / 2
-			local y = ScrH() - off - 24
-			draw.SimpleTextOutlined( "For GGC2020", "DermaLarge", x, y, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, outlinewidth, outlinecolour )
-			y = y + 24 
-			draw.SimpleTextOutlined( "Theme: Space - Spaces on a board game!", "DermaLarge", x, y, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, outlinewidth, outlinecolour )
+			local y = ScrH() - off - 32
+			draw.SimpleTextOutlined( "Please rate on the Workshop if you have fun", "DermaLarge", x, y, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 2, outlinecolour )
+			y = y + 32
+			draw.SimpleTextOutlined( "and comment with any minigame suggestions you have! :)", "DermaLarge", x, y, colour, TEXT_ALIGN_CENTER, TEXT_ALIGN_BOTTOM, 2, outlinecolour )
 
 			-- Made By
 			local x = ScrW() / 64
@@ -283,6 +276,7 @@ if ( CLIENT ) then
 
 		-- Then render based on this center pos calc
 		local gpos = 0
+		x = x + 32
 		for k, char in pairs( chars ) do
 			local col = GetLoopedColour( k )
 			local charx = x - w / 2 + math.cos( CurTime() * 2 + k ) * 2
@@ -320,6 +314,13 @@ if ( SERVER ) then
 			if ( #player.GetAll() == 0 ) then
 				--GAMEMODE:SwitchState( STATE_LOBBY )
 				RunConsoleCommand( "changelevel", "gm_construct" )
+			end
+
+			-- Campaign mode needs more than one player
+			if ( #player.GetAll() == 1 ) then
+				if ( GAMEMODE.Campaign ) then
+					GAMEMODE:SwitchState( STATE_WIN )
+				end
 			end
 		end
 	end )

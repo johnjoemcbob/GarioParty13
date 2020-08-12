@@ -87,6 +87,7 @@ if ( CLIENT ) then
 end
 
 GM.AddGame( NAME, "Default", {
+	Playable = true,
 	Author = "johnjoemcbob",
 	Colour = Color( 255, 255, 0, 255 ),
 	TagLine = "Boo! Ah!",

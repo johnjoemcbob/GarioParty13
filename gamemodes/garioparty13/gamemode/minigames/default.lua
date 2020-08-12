@@ -6,6 +6,7 @@
 --
 
 GM.AddGame( "Default", "", {
+	Playable = false,
 	Author = "johnjoemcbob",
 	Colour = Color( 255, 255, 0, 255 ),
 	Instructions = "Hold TAB to select a game",
@@ -14,6 +15,8 @@ GM.AddGame( "Default", "", {
 	Init = function( self )
 		-- Runs on CLIENT and SERVER realms!
 		-- When game is first loaded
+
+		self.Won = false
 	end,
 	PlayerJoin = function( self, ply )
 		-- Runs on CLIENT and SERVER realms!
@@ -85,6 +88,7 @@ GM.AddGame( "Default", "", {
 	end,
 	Win = function( self, ply )
 		if ( self.Won ) then return end
+		if ( !GAMEMODE.Campaign ) then return end
 
 		ply.WonLastGame = true
 		if ( SERVER ) then

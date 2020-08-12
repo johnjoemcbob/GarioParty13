@@ -24,6 +24,7 @@ function includeanddownload()
 		"sh_mg_teeth",
 		"sh_mg_rooftoprampage",
 		"sh_mg_timetravel",
+		"sh_mg_skyview",
 	}
 	for k, file in pairs( files ) do
 		local path = dir .. file .. ".lua"
@@ -116,6 +117,7 @@ function meta_ply:SetGame( game )
 			end
 		end
 
+		self:GetGame().Won = false
 		self:GetGame().Players[self] = true
 		self:StoreOnJoinGame()
 		self:GetGame():PlayerJoin( self )
@@ -160,6 +162,7 @@ function meta_ply:ResetOnLeaveGame()
 		self:SetWalkSpeed( self.OldWalkSpeed )
 		self:SetRunSpeed( self.OldRunSpeed )
 		self:SetJumpPower( self.OldJumpPower )
+		self:SetGravity( self.OldGravity )
 		self:SetFOV( self.OldFOV )
 		self:SetModel( self.OldModel )
 		self:SetMaterial( nil )
@@ -176,6 +179,7 @@ function meta_ply:StoreOnJoinGame()
 		self.OldWalkSpeed = self:GetWalkSpeed()
 		self.OldRunSpeed = self:GetRunSpeed()
 		self.OldJumpPower = self:GetJumpPower()
+		self.OldGravity = self:GetGravity()
 		self.OldModel = self:GetModel()
 		self.OldColour = self:GetColor()
 		self.OldFOV = self:GetFOV()
@@ -209,14 +213,29 @@ function meta_ply:ShowFPSController()
 	end
 end
 
+local NETSTRING_REQUESTALL = HOOK_PREFIX .. "RequestGameChangeAll"
 if ( SERVER ) then
 	util.AddNetworkString( HOOK_PREFIX .. "RequestGameChange" )
 	util.AddNetworkString( HOOK_PREFIX .. "ConfirmGameChange" )
+	util.AddNetworkString( NETSTRING_REQUESTALL )
 
 	net.Receive( HOOK_PREFIX .. "RequestGameChange", function( lngth, ply )
 		local gamename = net.ReadString()
 
 		ply:SetGame( gamename )
+	end )
+
+	net.Receive( NETSTRING_REQUESTALL, function( lngth, ply )
+		local gamename = net.ReadString()
+
+		-- Add all players to play state
+		for k, v in pairs( player.GetAll() ) do
+			v:SwitchState( PLAYER_STATE_PLAY )
+		end
+
+		-- Start minigame
+		GAMEMODE.GameStates[STATE_MINIGAME_INTRO].Minigame = gamename
+		GAMEMODE:SwitchState( STATE_MINIGAME_INTRO )
 	end )
 
 	function ConfirmGameChange( ply, togame )
@@ -260,6 +279,14 @@ end
 if ( CLIENT ) then
 	function meta_ply:RequestGameChange( togame )
 		net.Start( HOOK_PREFIX .. "RequestGameChange" )
+			net.WriteString( togame )
+		net.SendToServer()
+	end
+
+	function GM.RequestMinigameChangeAll( togame )
+		GAMEMODE.GameStates[STATE_MINIGAME].Minigame = togame
+
+		net.Start( NETSTRING_REQUESTALL )
 			net.WriteString( togame )
 		net.SendToServer()
 	end

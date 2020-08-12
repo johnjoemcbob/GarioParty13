@@ -19,6 +19,7 @@ local WALLS = {
 }
 
 GM.AddGame( "Screencheat", "Default", {
+	Playable = true,
 	Author = "johnjoemcbob",
 	Colour = Color( 150, 150, 255, 255 ),
 	TagLine = "Watch each other's screens!",

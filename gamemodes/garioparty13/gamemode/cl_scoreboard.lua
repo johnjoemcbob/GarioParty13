@@ -19,6 +19,22 @@ function Scoreboard:Show()
 	end
 
 	self.Showing = true
+
+	-- Show exit from minigame if in freeplay mode
+	if ( !GAMEMODE.Campaign && GAMEMODE:GetStateName() == STATE_MINIGAME ) then
+		self.Panel = vgui.Create( "DFrame" )
+		self.Panel:SetSize( ScrW() / 3, ScrH() / 3 )
+		self.Panel:Center()
+		self.Panel:SetTitle( "Freeplay Controller" )
+		self.Panel:MakePopup()
+
+		local button = vgui.Create( "DButton", self.Panel )
+		button:Dock( FILL )
+		button:SetText( "Back to Minigame Select" )
+		function button:DoClick()
+			GAMEMODE.RequestGameState( STATE_MINIGAME_SELECT )
+		end
+	end
 end
 
 function Scoreboard:Hide()
@@ -28,6 +44,11 @@ function Scoreboard:Hide()
 
 	if ( GAMEMODE:GetStateName() != STATE_BOARD ) then
 		self.Showing = false
+	end
+
+	if ( self.Panel and self.Panel:IsValid() ) then
+		self.Panel:Remove()
+		self.Panel = nil
 	end
 end
 

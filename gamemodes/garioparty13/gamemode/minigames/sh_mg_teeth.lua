@@ -33,6 +33,7 @@ local Gunk = {
 local thing = true
 
 GM.AddGame( "Teeth", "Default", {
+	Playable = true,
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
 	TagLine = "TEETH",

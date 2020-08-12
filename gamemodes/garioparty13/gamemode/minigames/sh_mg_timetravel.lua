@@ -130,6 +130,7 @@ local function GetMoveVector(mv)
 end
 
 GM.AddGame( NAME, "Default", {
+	Playable = true,
 	Author = "johnjoemcbob",
 	Colour = Color( 100, 255, 150, 255 ),
 	TagLine = "Thanks Anderson!",
